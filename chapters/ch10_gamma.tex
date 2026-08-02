@@ -1,0 +1,479 @@
+% Chapter 10: Gamma Function
+% ch10_gamma.tex
+
+\chapter{The Gamma Function and Euler's Reflection Formula}
+
+\begin{historical}
+Euler introduced the Gamma function in 1729 as an interpolating function for the factorial,
+communicating it to Goldbach in letters (Opera Omnia, Series I, Vol. 14). He discovered
+the integral representation, the infinite product, and the reflection formula, establishing
+the Gamma function as a cornerstone of analysis. The Gamma function generalizes the factorial
+to complex numbers (except non-positive integers) and appears throughout mathematics, physics,
+and statistics.
+\end{historical}
+
+\section{Definition}
+
+\begin{definition}[Euler's Integral of the Second Kind]
+For $\Re(z) > 0$:
+\[
+\Gamma(z) = \int_0^\infty t^{z-1} e^{-t}\, dt
+\]
+\end{definition}
+
+\begin{theorem}[Factorial Interpolation]
+For any positive integer $n$:
+\[
+\Gamma(n+1) = n!
+\]
+\end{theorem}
+
+\begin{proof}
+Integrating by parts with $u = t^z$ and $dv = e^{-t}dt$:
+\[
+\Gamma(z+1) = \left[ -t^z e^{-t} \right]_0^\infty + z \int_0^\infty t^{z-1} e^{-t}\, dt = 0 + z\Gamma(z) = z\Gamma(z).
+\]
+Since $\Gamma(1) = \int_0^\infty e^{-t}dt = 1$, induction yields $\Gamma(n+1) = n!$.
+\end{proof}
+
+\begin{lstlisting}[caption={Gamma function values}, label=lst:gamma]
+from euler import gamma_function, digamma_function
+import math
+
+print("Gamma function values \Gamma(n+1) = n!:")
+for n in range(10):
+    result = gamma_function(n + 1)
+    print(f"  \Gamma({n+1}) = {result:.6f}  (n! = {math.factorial(n)})")
+
+print("\nGamma at half-integers:")
+for x in [0.5, 1.5, 2.5, 3.5]:
+    result = gamma_function(x)
+    print(f"  \Gamma({x}) = {result:.6f}")
+\end{lstlisting}
+
+\section{Fundamental Properties}
+
+\subsection{Recurrence Relation}
+
+\begin{theorem}[Functional Equation]
+For all $z \in \C \setminus \{0, -1, -2, \ldots\}$:
+\[
+\Gamma(z+1) = z \Gamma(z).
+\]
+\end{theorem}
+
+\begin{proof}
+Integration by parts on the integral definition gives:
+\[
+\Gamma(z+1) = \int_0^\infty t^z e^{-t} dt = \left[-t^z e^{-t}\right]_0^\infty + z\int_0^\infty t^{z-1} e^{-t} dt = z\Gamma(z).
+\]
+\end{proof}
+
+\subsection{Analytic Continuation}
+
+\begin{theorem}[Meromorphic Extension]
+The Gamma function extends to a meromorphic function on $\mathbb{C}$ with simple poles at $z = 0, -1, -2, \ldots$. The residue at $z = -n$ is $\frac{(-1)^n}{n!}$.
+\end{theorem}
+
+\begin{proof}
+Using the recurrence $\Gamma(z) = \frac{\Gamma(z+1)}{z}$, we can extend $\Gamma$ leftward. At $z = -n$, the function has a simple pole with residue:
+\[
+\lim_{z \to -n} (z + n)\Gamma(z) = \frac{(-1)^n}{n!}.
+\]
+\end{proof}
+
+\section{Weierstrass Product Representation}
+
+Euler's original formulation used an infinite product:
+\[
+\frac{1}{\Gamma(z)} = z e^{\gamma z} \prod_{n=1}^\infty \left(1 + \frac{z}{n}\right) e^{-z/n}
+\]
+where $\gamma$ is Euler's constant. This product converges for all complex $z$.
+
+\begin{theorem}[Weierstrass Product]
+The Weierstrass form of the Gamma function is:
+\[
+\Gamma(z) = \frac{e^{-\gamma z}}{z} \prod_{n=1}^\infty \left(1 + \frac{z}{n}\right)^{-1} e^{z/n}.
+\]
+\end{theorem}
+
+\begin{proof}
+Taking the logarithm of the product and differentiating, one can verify that the resulting function satisfies the same functional equation as $\Gamma(z)$ and agrees with it at positive integers.
+\end{proof}
+
+\section{Key Formulas}
+
+\subsection{Euler's Reflection Formula}
+
+\begin{theorem}[Euler's Reflection Formula]
+\[
+\Gamma(z)\Gamma(1-z) = \frac{\pi}{\sin(\pi z)}
+\]
+\end{theorem}
+
+\begin{proof}
+Using the Weierstrass infinite product representation of the Gamma function:
+\[
+\frac{1}{\Gamma(z)} = z e^{\gamma z} \prod_{n=1}^\infty \left(1 + \frac{z}{n}\right) e^{-z/n},
+\]
+we have:
+\[
+\frac{1}{\Gamma(z)\Gamma(-z)} = -z^2 \prod_{n=1}^\infty \left(1 - \frac{z^2}{n^2}\right).
+\]
+Using the relation $\Gamma(1-z) = -z\Gamma(-z)$, this simplifies to:
+\[
+\frac{1}{\Gamma(z)\Gamma(1-z)} = z \prod_{n=1}^\infty \left(1 - \frac{z^2}{n^2}\right) = \frac{\sin(\pi z)}{\pi},
+\]
+which yields $\Gamma(z)\Gamma(1-z) = \frac{\pi}{\sin(\pi z)}$.
+\end{proof}
+
+\begin{corollary}
+Setting $z = 1/2$ gives $\Gamma(1/2)^2 = \pi$, so $\Gamma(1/2) = \sqrt{\pi}$.
+\end{corollary}
+
+\subsection{Legendre Duplication Formula}
+
+\begin{theorem}[Legendre Duplication Formula]
+\[
+\Gamma(z)\Gamma\left(z+\frac{1}{2}\right) = 2^{1-2z}\sqrt{\pi}\,\Gamma(2z)
+\]
+\end{theorem}
+
+\begin{proof}
+This follows from the Gauss multiplication formula with $m = 2$:
+\[
+\Gamma(z)\Gamma\left(z + \frac{1}{2}\right) = \frac{\sqrt{\pi}}{2^{2z-1}} \Gamma(2z).
+\]
+\end{proof}
+
+\subsection{Gauss Multiplication Formula}
+
+\begin{theorem}[Gauss Multiplication Formula]
+For any positive integer $m$:
+\[
+\prod_{k=0}^{m-1} \Gamma\left(z + \frac{k}{m}\right) = \frac{(2\pi)^{(m-1)/2}}{m^{z-1/2}} \Gamma(mz).
+\]
+\end{theorem}
+
+\section{The Beta Function}
+
+\begin{definition}[Beta Function]
+The Beta function is defined as:
+\[
+B(x, y) = \int_0^1 t^{x-1}(1-t)^{y-1} dt = \frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}, \qquad \Re(x) > 0, \Re(y) > 0.
+\]
+\end{definition}
+
+\begin{theorem}[Beta-Gamma Relation]
+\[
+B(x, y) = \frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}.
+\]
+\end{theorem}
+
+\begin{proof}
+Starting from the integral representations:
+\[
+\Gamma(x)\Gamma(y) = \int_0^\infty \int_0^\infty s^{x-1} t^{y-1} e^{-(s+t)}\, ds\, dt.
+\]
+Substituting $s = uv$, $t = u(1-v)$ gives:
+\[
+\Gamma(x)\Gamma(y) = \int_0^1 v^{x-1}(1-v)^{y-1} dv \int_0^\infty u^{x+y-1} e^{-u} du = B(x,y) \Gamma(x+y).
+\]
+\end{proof}
+
+\section{The Digamma Function}
+
+The digamma function is the logarithmic derivative:
+\[
+\psi(z) = \frac{d}{dz} \log \Gamma(z) = \frac{\Gamma'(z)}{\Gamma(z)}
+\]
+
+\begin{lstlisting}[caption={Digamma function}, label=lst:digamma]
+from euler import digamma_function
+import math
+
+print("Digamma function \psi(z):")
+for z in [1, 2, 3, 4, 0.5, 1.5]:
+    val = digamma_function(z)
+    print(f"  \psi({z}) = {val:.8f}")
+\end{lstlisting}
+
+\begin{theorem}[Series Representation]
+For $\Re(z) > 0$:
+\[
+\psi(z) = -\gamma + \sum_{n=0}^\infty \left(\frac{1}{n+1} - \frac{1}{n+z}\right).
+\]
+\end{theorem}
+
+\begin{theorem}[Special Values]
+\[
+\psi(1) = -\gamma, \quad \psi(1/2) = -\gamma - 2\ln 2, \quad \psi(n) = -\gamma + H_{n-1}
+\]
+where $H_n$ is the $n$-th harmonic number.
+\end{theorem}
+
+\section{Stirling's Formula}
+
+\begin{theorem}[Stirling's Formula]
+As $z \to \infty$ in the right half-plane:
+\[
+\Gamma(z) \sim \sqrt{2\pi} \, z^{z-1/2} e^{-z} \left(1 + \frac{1}{12z} + \frac{1}{288z^2} - \cdots\right).
+\]
+\end{theorem}
+
+\begin{proof}
+Using the integral representation and Laplace's method, the dominant contribution comes from near the maximum of the integrand at $t = z$.
+\end{proof}
+
+\subsection{Refined Stirling Series}
+
+A more accurate approximation is:
+\[
+\Gamma(z) \approx \sqrt{\frac{2\pi}{z}} \left(\frac{z}{e}\right)^z \left(1 + \frac{1}{12z} + \frac{1}{288z^2} - \frac{139}{51840z^3} - \cdots\right).
+\]
+
+\section{Computational Methods}
+
+\subsection{Lanczos Approximation}
+For numerical computation of $\Gamma(z)$:
+\[
+\Gamma(z+1) = \sqrt{2\pi} \left(z + g + \frac{1}{2}\right)^{z+1/2} e^{-(z+g+1/2)} \sum_{n=0}^{N} \frac{c_n}{z+n}
+\]
+where $g$ is a tuning parameter and $c_n$ are coefficients.
+
+\subsection{Spouge's Approximation}
+An alternative to Lanczos with better error control:
+\[
+\Gamma(z) \approx \sqrt{2\pi}(z+a)^{z+1/2}e^{-(z+a)}\left(c_0 + \sum_{n=1}^N \frac{c_n}{z+n}\right)
+\]
+
+\section{Applications}
+
+\begin{itemize}
+\item \textbf{Probability:} Beta function $B(x,y) = \frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}$
+\item \textbf{Statistics:} Gamma distribution, Chi-squared distribution
+\item \textbf{Combinatorics:} Counting permutations with repetition
+\item \textbf{Number theory:} Functional equation of the Riemann zeta function
+\item \textbf{Physics:} Partition functions in statistical mechanics
+\item \textbf{Quantum mechanics:} Wavefunction normalization
+\end{itemize}
+
+\begin{remark}[Gamma Distribution]
+The gamma distribution has PDF:
+\[
+f(x; \alpha, \beta) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha-1} e^{-\beta x}, \qquad x > 0.
+\]
+\end{remark}
+
+\begin{remark}[Chi-Squared Distribution]
+If $X_1, \ldots, X_n$ are i.i.d. standard normal, then $\sum X_i^2 \sim \chi^2(n)$ with PDF involving $\Gamma(n/2)$.
+\end{remark}
+
+\begin{remark}[Riemann Zeta Function]
+The functional equation relates $\zeta(s)$ to $\zeta(1-s)$ via the gamma function:
+\[
+\zeta(s) = 2^s \pi^{s-1} \sin\left(\frac{\pi s}{2}\right) \Gamma(1-s) \zeta(1-s).
+\]
+\end{remark}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why is $\Gamma(n) = (n-1)!$ instead of $\Gamma(n) = n!$?} \\
+The convention $\Gamma(n) = (n-1)!$ comes from the integral definition. We have $\Gamma(1) = 1 = 0!$, $\Gamma(2) = 1 = 1!$, $\Gamma(3) = 2 = 2!$, so $\Gamma(n) = (n-1)!$. This makes the recurrence $\Gamma(z+1) = z\Gamma(z)$ work cleanly.
+
+\item \textbf{Q: What is $\Gamma(1/2)$?} \\
+$\Gamma(1/2) = \sqrt{\pi} \approx 1.77245$. This follows from the Gaussian integral $\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$ via the substitution $t = x^2$.
+
+\item \textbf{Q: What are the poles of the Gamma function?} \\
+$\Gamma(z)$ has simple poles at $z = 0, -1, -2, -3, \ldots$ with residue $\frac{(-1)^n}{n!}$ at $z = -n$.
+
+\item \textbf{Q: How is the Gamma function used in probability?} \\
+The Gamma distribution has PDF $f(x;\alpha, \beta) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha-1} e^{-\beta x}$. The Beta distribution uses the ratio $\frac{\Gamma(\alpha)\Gamma(\beta)}{\Gamma(\alpha+\beta)}$.
+
+\item \textbf{Q: What is the relationship between $\Gamma$ and the factorial?} \\
+The Gamma function extends the factorial to complex numbers (except non-positive integers). $\Gamma(n+1) = n!$ for non-negative integers $n$.
+
+\item \textbf{Q: How is the Beta function defined?} \\
+The Beta function is $B(x,y) = \frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)} = \int_0^1 t^{x-1}(1-t)^{y-1} dt$. It appears in Bayesian statistics and combinatorics.
+
+\item \textbf{Q: What is the connection to the Riemann zeta function?} \\
+The functional equation $\zeta(s) = 2^s \pi^{s-1} \sin(\pi s/2) \Gamma(1-s) \zeta(1-s)$ connects values of $\zeta$ at $s$ and $1-s$ through the gamma function.
+
+\item \textbf{Q: Can $\Gamma$ be computed for negative numbers?} \\
+Yes, using the reflection formula $\Gamma(z)\Gamma(1-z) = \pi/\sin(\pi z)$. For negative non-integer $z$, this gives a finite value.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Prove that $\Gamma(1/2) = \sqrt{\pi}$ using the Gaussian integral.
+\end{exercise}
+
+\begin{exercise}
+Use the reflection formula to show $\Gamma(1/4)\Gamma(3/4) = \pi\sqrt{2}$.
+\end{exercise}
+
+\begin{exercise}
+Derive Stirling's formula from the integral definition using Laplace's method.
+\end{exercise}
+
+\begin{exercise}
+Show that $\psi(n) = -\gamma + \sum_{k=1}^{n-1} \frac{1}{k}$ for positive integers $n$.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement the Lanczos approximation for computing $\Gamma(z)$ and compare accuracy with the built-in `math.gamma`.
+\end{exercise}
+
+\begin{exercise}
+Verify the duplication formula $\Gamma(z)\Gamma(z+1/2) = 2^{1-2z}\sqrt{\pi}\Gamma(2z)$ for $z = 1/2, 1, 3/2$.
+\end{exercise}
+
+\begin{exercise}
+Prove the Beta function identity $B(x,y) = \frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}$ using the substitution $t = \frac{u}{u+v}$.
+\end{exercise}
+
+\begin{exercise}
+Use the Gauss multiplication formula to show $\Gamma(1/3)\Gamma(2/3) = \frac{2\pi}{\sqrt{3}}$.
+\end{exercise}
+
+\begin{exercise}
+Compute $\Gamma(1/4)$ numerically and verify that $\Gamma(1/4) \approx 3.6256$.
+\end{exercise}
+
+
+\section{Special Values and Identities}
+
+\begin{theorem}[Gamma at Half-Integers]
+For any positive integer $n$:
+\[
+\Gamma\left(n + \frac{1}{2}\right) = \frac{(2n)!}{4^n n!} \sqrt{\pi} = \frac{(2n-1)!!}{2^n} \sqrt{\pi}.
+\]
+\end{theorem}
+
+\begin{proof}
+Using the duplication formula with $z = 1/2$:
+\[
+\Gamma\left(\frac{1}{2}\right)\Gamma(1) = 2^{0}\sqrt{\pi}\,\Gamma(1) \implies \Gamma\left(\frac{1}{2}\right) = \sqrt{\pi}.
+\]
+Then applying the recurrence relation repeatedly gives the general formula.
+\end{proof}
+
+\begin{corollary}
+\[
+\Gamma\left(\frac{1}{2}\right) = \sqrt{\pi}, \quad \Gamma\left(\frac{3}{2}\right) = \frac{\sqrt{\pi}}{2}, \quad \Gamma\left(\frac{5}{2}\right) = \frac{3\sqrt{\pi}}{4}, \quad \Gamma\left(\frac{7}{2}\right) = \frac{15\sqrt{\pi}}{8}.
+\]
+\end{corollary}
+
+\begin{theorem}[Gamma at Rational Points]
+\[
+\Gamma\left(\frac{1}{3}\right)\Gamma\left(\frac{2}{3}\right) = \frac{2\pi}{\sqrt{3}}, \qquad \Gamma\left(\frac{1}{4}\right)\Gamma\left(\frac{3}{4}\right) = \pi\sqrt{2}.
+\]
+\end{theorem}
+
+\section{Gauss's Formula}
+
+\begin{theorem}[Gauss's Digamma Theorem]
+For any positive integers $p$ and $q$ with $p < q$:
+\[
+\psi\left(\frac{p}{q}\right) = -\gamma - \log(2q) - \frac{\pi}{2}\cot\left(\frac{p\pi}{q}\right) + 2\sum_{n=1}^{\lfloor(q-1)/2\rfloor} \cos\left(\frac{2\pi np}{q}\right)\log\left(\sin\left(\frac{n\pi}{q}\right)\right).
+\]
+\end{theorem}
+
+\section{Euler's Constant Formulas}
+
+\begin{theorem}[Integral for $\gamma$]
+\[
+\gamma = -\int_0^\infty e^{-t}\log t\, dt.
+\]
+\end{theorem}
+
+\begin{proof}
+From the definition $\Gamma(z) = \int_0^\infty t^{z-1} e^{-t} dt$, differentiating at $z = 1$:
+\[
+\Gamma'(1) = \int_0^\infty \log t \cdot e^{-t} dt = -\gamma.
+\]
+\end{proof}
+
+\begin{theorem}[Euler's Series]
+\[
+\gamma = \sum_{k=1}^\infty \left(\frac{1}{k} - \log\left(1 + \frac{1}{k}\right)\right).
+\]
+\end{theorem}
+
+\begin{theorem}[Binet's Second Formula]
+\[
+\log\Gamma(z) = \left(z - \frac{1}{2}\right)\log z - z + \frac{1}{2}\log(2\pi) + \int_0^\infty \left(\frac{1}{e^t - 1} - \frac{1}{t} + \frac{1}{2}\right)\frac{e^{-zt}}{t} dt.
+\]
+\end{theorem}
+
+\section{Numerical Properties}
+
+The Gamma function satisfies several useful bounds:
+
+\begin{theorem}[ Gautschi's Inequality]
+For $x > 0$ and $0 < s < 1$:
+\[
+x^{1-s} < \frac{\Gamma(x+1)}{\Gamma(x+s)} < \left(x + \frac{1}{2}\right)^{1-s}.
+\]
+\end{theorem}
+
+\begin{theorem}[Kershaw's Inequality]
+For $x > 0$ and $0 < s < 1$:
+\[
+\left(x + \frac{s}{2}\right)^{1-s} < \frac{\Gamma(x+1)}{\Gamma(x+s)} < \left(x + \sqrt{x^2 + s}\right)^{1-s}.
+\]
+\end{theorem}
+
+\section{Higher Derivatives}
+
+\begin{theorem}[Polygamma Functions]
+The $n$-th derivative of $\Gamma(z)$ can be expressed using polygamma functions:
+\[
+\psi^{(n)}(z) = \frac{d^{n+1}}{dz^{n+1}} \log\Gamma(z) = (-1)^{n+1} n! \sum_{k=0}^\infty \frac{1}{(z+k)^{n+1}}.
+\]
+\end{theorem}
+
+\begin{corollary}
+\[
+\psi^{(n)}(1) = (-1)^{n+1} n! \zeta(n+1).
+\]
+\end{corollary}
+
+\begin{itemize}
+    \item $\psi^{(0)}(1) = -\gamma$
+    \item $\psi^{(1)}(1) = \zeta(2) = \frac{\pi^2}{6}$
+    \item $\psi^{(2)}(1) = -2\zeta(3)$
+    \item $\psi^{(3)}(1) = 6\zeta(4) = \frac{\pi^4}{15}$
+\end{itemize}
+
+\section{Connections to Other Functions}
+
+\subsection{Beta Function}
+
+The Beta function $B(x,y)$ is intimately related to the Gamma function:
+\[
+B(x,y) = \frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}.
+\]
+
+This identity is used extensively in probability theory and statistics.
+
+\subsection{Wallis Product}
+
+Setting $z = 1/2$ in the reflection formula and using $\Gamma(1/2) = \sqrt{\pi}$ yields:
+\[
+\frac{\pi}{2} = \prod_{n=1}^\infty \frac{4n^2}{4n^2 - 1} = \frac{2}{1} \cdot \frac{2}{3} \cdot \frac{4}{3} \cdot \frac{4}{5} \cdot \frac{6}{5} \cdot \frac{6}{7} \cdots
+\]
+
+\subsection{Weierstrass Product}
+
+The Weierstrass product for $\Gamma(z)$ connects it to the Riemann zeta function:
+\[
+\frac{1}{\Gamma(z)} = z e^{\gamma z} \prod_{n=1}^\infty \left(1 + \frac{z}{n}\right) e^{-z/n}.
+\]
+
+Taking logarithms and differentiating yields the digamma function:
+\[
+\psi(z) = -\gamma - \frac{1}{z} + \sum_{n=1}^\infty \left(\frac{1}{n} - \frac{1}{n+z}\right).
+\]

@@ -1,0 +1,464 @@
+% Chapter 6: Infinite Products and the Sine Function
+% ch06_infinite_products.tex
+
+\chapter{Infinite Products: Wallis, Sinc, Vi\`{e}te, and the Sine Function}
+
+\begin{historical}
+Euler's work on infinite products was revolutionary. He discovered the product formula for
+the sine function, the Wallis product for $\pi/2$, Vi\`{e}te's formula for $\pi$, and the Euler
+product for the zeta function. These products established deep connections between analysis,
+number theory, and geometry that continue to drive research today.
+\end{historical}
+
+\section{The Wallis Product}
+
+John Wallis discovered (1655) and Euler refined the product formula for $\pi/2$:
+\[
+\frac{\pi}{2} = \prod_{n=1}^\infty \frac{4n^2}{4n^2 - 1}
+= \frac{2}{1} \cdot \frac{2}{3} \cdot \frac{4}{3} \cdot \frac{4}{5} \cdot \frac{6}{5} \cdot \frac{6}{7} \cdots
+\]
+
+\begin{theorem}[Wallis Product]
+\[
+\frac{\pi}{2} = \prod_{n=1}^{\infty} \frac{2n}{2n-1} \cdot \frac{2n}{2n+1}
+\]
+\end{theorem}
+
+\begin{proof}
+Starting from the beta function $B(m,n) = \int_0^1 x^{m-1}(1-x)^{n-1} dx$, one can show
+that $\int_0^{\pi/2} \sin^{2n} x \, dx = \frac{(2n)!}{2^{2n}(n!)^2} \cdot \frac{\pi}{2}$ and
+$\int_0^{\pi/2} \sin^{2n+1} x \, dx = \frac{2^{2n}(n!)^2}{(2n+1)!}$. Taking the ratio and
+letting $n \to \infty$ gives the Wallis product.
+\end{proof}
+
+\subsection{Proof via Gamma Function}
+
+\begin{theorem}
+Using $\Gamma(n+1) = n!$ and $\Gamma(1/2) = \sqrt{\pi}$:
+\[
+\frac{\pi}{2} = \lim_{n\to\infty} \frac{2^{4n} (n!)^4}{[(2n)!]^2 (2n+1)}
+\]
+\end{theorem}
+
+\begin{proof}
+From the duplication formula $\Gamma(z)\Gamma(z+1/2) = 2^{1-2z}\sqrt{\pi}\Gamma(2z)$:
+\[
+\Gamma(n+1)\Gamma(n+1/2) = 2^{-2n}\sqrt{\pi}\Gamma(2n+1)
+\]
+Setting $z = n+1/2$ and taking ratios yields the Wallis product after simplification.
+\end{proof}
+
+\begin{lstlisting}[caption={Wallis product for $\pi/2$}, label=lst:wallis]
+from euler import wallis_product, wallis_product_partial
+import math
+
+print("$\pi$ approximation via Wallis product:")
+for n in [1, 2, 5, 10, 50, 100, 1000]:
+    approx = wallis_product(n) * 2
+    print(f"  n={n:4d}: $\pi$ \approx {approx:.12f}  error = {abs(math.pi - approx):.2e}")
+\end{lstlisting}
+
+\section{Convergence Analysis of Infinite Products}
+
+\subsection{Necessary and Sufficient Conditions}
+
+\begin{theorem}[Convergence Criterion]
+The infinite product $\prod_{n=1}^{\infty}(1 + a_n)$ converges (to a nonzero value) if and only if
+$\sum_{n=1}^{\infty} \ln(1 + a_n)$ converges.
+\end{theorem}
+
+\begin{theorem}[Absolute Convergence]
+The product $\prod(1 + a_n)$ converges absolutely if and only if $\sum |a_n| < \infty$.
+\end{theorem}
+
+\subsection{Comparison Tests}
+
+\begin{theorem}
+If $a_n \geq 0$, then $\prod(1 + a_n)$ converges if and only if $\sum a_n$ converges.
+\end{theorem}
+
+\begin{theorem}
+If $a_n \to 0$, then $\prod(1 + a_n)$ converges if and only if $\sum a_n$ converges.
+\end{theorem}
+
+\subsection{Convergence Rate Classification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|c|c}
+Product Type & Convergence Rate & Terms for $\epsilon$ Accuracy \\
+\hline
+Geometric ($|r|<1$) & $O(r^n)$ & $O(\log(1/\epsilon))$ \\
+Power law ($a_n = O(n^{-\alpha})$) & $O(n^{1-\alpha})$ & $O(\epsilon^{-1/(1-\alpha)})$ \\
+Double exponential & Super-fast & $O(\log\log(1/\epsilon))$ \\
+\hline
+\end{tabular}
+\caption{Convergence rates for common infinite products}
+\end{table}
+
+\section{The Sinc Product}
+
+Euler's product for $\sin(\pi x)/(\pi x)$ is a fundamental tool:
+\[
+\frac{\sin(\pi x)}{\pi x} = \prod_{n=1}^\infty \left(1 - \frac{x^2}{n^2}\right)
+\]
+
+This formula follows from the Weierstrass factorization theorem: an entire function is
+determined (up to an exponential factor) by its zeros. Since $\sin(\pi x)$ has zeros at
+all integers, the infinite product over $(1 - x/n)$ captures all zeros.
+
+\begin{theorem}[Euler's Sinc Product]
+For all complex $x$:
+\[
+\frac{\sin(\pi x)}{\pi x} = \prod_{n=1}^{\infty} \left(1 - \frac{x^2}{n^2}\right)
+\]
+\end{theorem}
+
+\begin{proof}
+Consider $f(x) = \frac{\sin(\pi x)}{\pi x}$. This is an entire function with simple zeros
+at all nonzero integers $x = \pm n$ for $n \geq 1$. By the Weierstrass factorization theorem
+for entire functions of order 1, $f$ can be written as:
+\[
+f(x) = e^{g(x)} \prod_{n=1}^{\infty} \left(1 - \frac{x}{n}\right)\left(1 + \frac{x}{n}\right)
+= e^{g(x)} \prod_{n=1}^{\infty} \left(1 - \frac{x^2}{n^2}\right)
+\]
+Since $f(0) = 1$ and $g(x)$ must be constant for convergence, we get $g(x) = 0$, yielding
+the result.
+\end{proof}
+
+\subsection{Weierstrass Factorization Theorem}
+
+\begin{theorem}[Weierstrass]
+Every entire function can be factored into a product involving its zeros:
+\[
+f(z) = z^m e^{g(z)} \prod_{n=1}^{\infty} E_{p_n}\left(\frac{z}{a_n}\right)
+\]
+where $E_k(z) = (1-z)\exp(z + z^2/2 + \cdots + z^k/k)$ are the Weierstrass elementary factors.
+\end{theorem}
+
+\begin{lstlisting}[caption={Sinc product}, label=lst:sinc]
+from euler import sinc_product, sinc_product_partial
+import math
+
+for x in [0.1, 0.25, 0.5]:
+    exact = math.sin(math.pi * x) / (math.pi * x)
+    print(f"\n  x = {x}: exact = {exact:.10f}")
+    for n in [10, 50, 100, 500]:
+        approx = sinc_product(x, n)
+        print(f"    n={n:3d}: {approx:.10f}  error = {abs(exact - approx):.2e}")
+\end{lstlisting}
+
+\section{Euler's Product for Sine}
+
+Setting $x \to x/\pi$ in the sinc product gives:
+\[
+\sin x = x \prod_{n=1}^\infty \left(1 - \frac{x^2}{n^2 \pi^2}\right)
+\]
+
+This was Euler's key insight for solving the Basel problem.
+
+\subsection{Convergence Analysis}
+
+\begin{theorem}
+The product $\prod_{n=1}^{\infty}\left(1 - \frac{x^2}{n^2\pi^2}\right)$ converges uniformly on compact subsets of $\mathbb{C}$.
+\end{theorem}
+
+\begin{proof}
+For fixed $x$ and large $n$, we have $|x^2/(n^2\pi^2)| < 1/2$. Using the estimate
+$|\ln(1 - a_n)| \leq 2|a_n|$ for small $a_n$:
+\[
+\sum_{n=1}^{\infty} \left|\frac{x^2}{n^2\pi^2}\right| = \frac{|x|^2}{\pi^2}\sum_{n=1}^{\infty}\frac{1}{n^2} = \frac{|x|^2}{6} < \infty
+\]
+By the Weierstrass M-test, the product converges absolutely and uniformly.
+\end{proof}
+
+\begin{lstlisting}[caption={Euler's sine product}, label=lst:euler_sine]
+from euler import euler_product_sine
+import math
+
+for x in [0.5, 1.0, 2.0, math.pi/2]:
+    exact = math.sin(x)
+    print(f"\n  x = {x:.4f}: sin(x) = {exact:.8f}")
+    for n in [10, 50, 100]:
+        approx = euler_product_sine(x, n)
+        print(f"    n={n:3d}: {approx:.8f}  error = {abs(exact - approx):.2e}")
+\end{lstlisting}
+
+\section{Product for Cosine}
+
+Euler also discovered the product formula for cosine by shifting the sine product:
+\[
+\cos x = \prod_{n=1}^\infty \left(1 - \frac{4x^2}{(2n-1)^2 \pi^2}\right)
+\]
+
+This follows from $\cos x = \sin(x + \pi/2)$ and the sine product formula.
+
+\subsection{Proof of Cosine Product}
+
+\begin{theorem}
+\[
+\cos x = \prod_{n=1}^{\infty} \left(1 - \frac{4x^2}{(2n-1)^2\pi^2}\right)
+\]
+\end{theorem}
+
+\begin{proof}
+Using $\cos x = \sin(x + \pi/2)$ and the sine product:
+\[
+\cos x = \left(x + \frac{\pi}{2}\right) \prod_{n=1}^{\infty} \left(1 - \frac{(x+\pi/2)^2}{n^2\pi^2}\right)
+\]
+Substituting $n \to n - 1/2$ and simplifying yields the product over odd integers.
+\end{proof}
+
+\section{Vi\`{e}te's Formula for $\pi$}
+
+Vi\`{e}te's formula (1593) was the first infinite product in mathematical history:
+\[
+\frac{2}{\pi} = \prod_{n=1}^\infty \cos\left(\frac{\pi}{2^{n+1}}\right)
+= \cos\frac{\pi}{4} \cdot \cos\frac{\pi}{8} \cdot \cos\frac{\pi}{16} \cdots
+\]
+
+\begin{theorem}[Vi\`{e}te's Formula]
+\[
+\frac{2}{\pi} = \prod_{n=1}^{\infty} \cos\left(\frac{\pi}{2^{n+1}}\right)
+\]
+\end{theorem}
+
+\begin{proof}
+Starting from the double-angle formula $\sin(2x) = 2\sin x \cos x$, we get
+$\cos x = \frac{\sin(2x)}{2\sin x}$. Setting $x = \pi/4$ and iterating:
+\[
+\cos\frac{\pi}{4} \cdot \cos\frac{\pi}{8} \cdot \cos\frac{\pi}{16} \cdots
+= \frac{\sin(\pi/2)}{2} \cdot \frac{\sin(\pi/4)}{2\sin(\pi/8)} \cdot \frac{\sin(\pi/4)}{2\sin(\pi/8)} \cdots
+\]
+The telescoping product yields $2/\pi$.
+\end{proof}
+
+\subsection{Nested Radical Form}
+
+Vi\`{e}te's formula can be written using nested radicals:
+\[
+\frac{2}{\pi} = \frac{\sqrt{2}}{2} \cdot \frac{\sqrt{2+\sqrt{2}}}{2} \cdot \frac{\sqrt{2+\sqrt{2+\sqrt{2}}}}{2} \cdots
+\]
+
+\begin{lstlisting}[caption={Vi\`{e}te's formula for $\pi$}, label=lst:viete]
+from euler import viete_formula
+import math
+
+print("Vi\`{e}te's formula:")
+for n in [5, 10, 20, 30, 50]:
+    approx = viete_formula(n)
+    print(f"  n={n:2d}: $\pi$ \approx {approx:.12f}  error = {abs(math.pi - approx):.2e}")
+\end{lstlisting}
+
+\section{Euler Product for the Zeta Function}
+
+For $\Re(s) > 1$:
+\[
+\zeta(s) = \prod_{p} \frac{1}{1 - p^{-s}}
+\]
+
+where the product is over all primes $p$.
+
+\subsection{Proof of Euler Product}
+
+\begin{theorem}[Euler Product Formula]
+For $\Re(s) > 1$:
+\[
+\zeta(s) = \sum_{n=1}^{\infty} \frac{1}{n^s} = \prod_{p \text{ prime}} \left(1 - \frac{1}{p^s}\right)^{-1}
+\]
+\end{theorem}
+
+\begin{proof}
+Using the geometric series $\frac{1}{1 - p^{-s}} = \sum_{k=0}^{\infty} p^{-ks}$:
+\[
+\prod_{p} \left(1 - \frac{1}{p^s}\right)^{-1} = \prod_{p} \sum_{k=0}^{\infty} \frac{1}{p^{ks}}
+\]
+By the fundamental theorem of arithmetic, every integer $n$ has a unique prime factorization,
+so expanding the product gives exactly $\sum_{n=1}^{\infty} n^{-s} = \zeta(s)$.
+\end{proof}
+
+\subsection{Consequences}
+
+\begin{theorem}
+The Euler product implies there are infinitely many primes.
+\end{theorem}
+
+\begin{proof}
+If there were finitely many primes, the product would be finite, but $\zeta(s) \to \infty$
+as $s \to 1^+$, contradicting finiteness.
+\end{proof}
+
+\begin{lstlisting}[caption={Euler product for $\zeta(2)$}, label=lst:euler_zeta_product]
+from euler import euler_product_formula
+import math
+
+print("Euler product for $\zeta(2) = \pi^2/6$:")
+exact = math.pi**2 / 6
+for n in [10, 50, 100, 500, 1000]:
+    approx = euler_product_formula(2, n)
+    print(f"  {n:4d} primes: {approx:.10f} (error: {abs(exact-approx):.2e})")
+\end{lstlisting}
+
+\section{Computational Analysis}
+
+\subsection{Convergence Rates}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|c|c}
+Product & Convergence Rate & Approximate terms for 6 digits \\
+\hline
+Wallis ($\pi/2$) & $O(1/n)$ & $\sim 10^6$ \\
+Vi\`{e}te ($\pi$) & Doubles digits per term & $\sim 20$ \\
+Sinc product & $O(1/n)$ & $\sim 10^6$ \\
+Euler zeta product & $O(1/p_N)$ & $\sim 10^5$ \\
+\hline
+\end{tabular}
+\caption{Convergence rates for famous infinite products}
+\end{table}
+
+\subsection{Error Bounds}
+
+\begin{theorem}
+For the Wallis product after $n$ terms:
+\[
+\left|\frac{\pi}{2} - \prod_{k=1}^{n} \frac{4k^2}{4k^2-1}\right| \sim \frac{1}{4n}
+\]
+\end{theorem}
+
+\begin{theorem}
+For Vi\`{e}te's formula after $n$ terms:
+\[
+\left|\pi - \pi_n\right| = O(4^{-2^n})
+\]
+\end{theorem}
+
+\subsection{Complexity Analysis}
+
+\begin{itemize}
+\item \textbf{Wallis product:} Each term requires 2 multiplications and 1 division. Total: $O(n)$ operations for $n$ terms.
+\item \textbf{Vi\`{e}te formula:} Each term requires one cosine evaluation. With nested radicals, the arithmetic complexity is $O(n^2)$ bit operations for $n$ terms.
+\item \textbf{Sinc product:} Each term requires 2 multiplications. Total: $O(n)$ operations.
+\item \textbf{Euler zeta product:} Computing $n$ primes takes $O(n \log n \log\log n)$ with sieve. Each term requires one exponentiation.
+\end{itemize}
+
+\section{Deriving the Basel Problem}
+
+Setting $x = 1/2$ in the sinc product:
+\[
+\frac{\sin(\pi/2)}{\pi/2} = \frac{2}{\pi} = \prod_{n=1}^\infty \left(1 - \frac{1}{4n^2}\right)
+\]
+Inverting gives the Wallis product. Expanding the sinc product as a power series and
+comparing coefficients yields $\zeta(2) = \pi^2/6$.
+
+\subsection{Taylor Expansion of Sinc}
+
+\begin{theorem}
+Expanding $\frac{\sin(\pi x)}{\pi x}$ as a power series:
+\[
+\frac{\sin(\pi x)}{\pi x} = 1 - \frac{\pi^2 x^2}{3!} + \frac{\pi^4 x^4}{5!} - \cdots
+\]
+\end{theorem}
+
+\begin{proof}
+Using the Taylor series $\sin(\pi x) = \pi x - \frac{(\pi x)^3}{3!} + \frac{(\pi x)^5}{5!} - \cdots$:
+\[
+\frac{\sin(\pi x)}{\pi x} = 1 - \frac{(\pi x)^2}{3!} + \frac{(\pi x)^4}{5!} - \cdots
+\]
+\end{proof}
+
+\subsection{Matching Coefficients}
+
+Expanding the product:
+\[
+\prod_{n=1}^{\infty}\left(1 - \frac{x^2}{n^2}\right) = 1 - \left(\sum_{n=1}^{\infty}\frac{1}{n^2}\right)x^2 + \cdots
+\]
+
+Comparing coefficients of $x^2$:
+\[
+-\frac{\pi^2}{6} = -\sum_{n=1}^{\infty}\frac{1}{n^2} = -\zeta(2)
+\]
+
+\section{Riemann Xi Function}
+
+\begin{definition}
+The Riemann Xi function is defined as:
+\[
+\xi(s) = \frac{1}{2}s(s-1)\pi^{-s/2}\Gamma\left(\frac{s}{2}\right)\zeta(s)
+\]
+\end{definition}
+
+\begin{theorem}
+$\xi(s)$ satisfies the functional equation $\xi(s) = \xi(1-s)$ and has an Euler product:
+\[
+\xi(s) = \xi(0) \prod_{\rho} \left(1 - \frac{s}{\rho}\right)
+\]
+where $\rho$ runs over the non-trivial zeros of $\zeta(s)$.
+\end{theorem}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why does the Wallis product converge so slowly?} \\
+The Wallis product converges like $1/n$. After 1,000 terms, the approximation of $\pi/2$ has only about 2--3 correct decimal places. This is why it is historically significant but practically useless for computing $\pi$.
+
+\item \textbf{Q: How does the sinc product relate to the Basel problem?} \\
+Setting $x$ in the sinc product $\frac{\sin(\pi x)}{\pi x} = \prod_{n=1}^{\infty} (1 - x^2/n^2)$ and expanding both sides gives coefficients involving $\sum 1/n^k$. Comparing the $x^2$ coefficient yields $\zeta(2) = \pi^2/6$, the Basel result. The $x^4$ coefficient gives $\zeta(4) = \pi^4/90$.
+
+\item \textbf{Q: Why does the sine product vanish at $x = n\pi$?} \\
+At $x = n\pi$ for any nonzero integer $n$, the factor $(1 - n^2\pi^2/(n^2\pi^2)) = 0$ appears in the product, making the entire product zero. This matches $\sin(n\pi) = 0$.
+
+\item \textbf{Q: What is the difference between the Wallis product and Vi\`{e}te's formula?} \\
+The Wallis product $\pi/2 = \prod_{n=1}^{\infty} \frac{4n^2}{4n^2-1}$ involves rational factors and converges slowly. Vi\`{e}te's formula $\frac{2}{\pi} = \prod_{n=1}^{\infty} \cos(\frac{\pi}{2^{n+1}})$ involves nested radicals and converges much faster (doubling the number of correct digits with each factor).
+
+\item \textbf{Q: Can infinite products represent other elementary functions?} \\
+Yes. $\cos x$, $\frac{\sin x}{x}$, the gamma function, and the Riemann zeta function all have product representations. Euler discovered many of these, and they remain fundamental tools in analytic number theory and complex analysis.
+
+\item \textbf{Q: Why does $\prod_{n=1}^{\infty} (1 - 1/n^2) = 1/2$?} \\
+The partial product telescopes: $\prod_{n=2}^N (1 - 1/n^2) = \prod_{n=2}^N \frac{(n-1)(n+1)}{n^2} = \frac{1 \cdot (N+1)}{2N} \to \frac{1}{2}$ as $N \to \infty$. The $n=1$ term is excluded because $1 - 1/1^2 = 0$.
+
+\item \textbf{Q: What is the connection between infinite products and prime numbers?} \\
+The Euler product $\zeta(s) = \prod_p (1 - p^{-s})^{-1}$ directly connects the Riemann zeta function to the distribution of prime numbers. This connection is the foundation of analytic number theory.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Prove the Wallis product by integrating $\int_0^{\pi/2} \sin^n x \, dx$ and taking the ratio of consecutive integrals.
+\end{exercise}
+
+\begin{exercise}
+Derive the product formula for $\cos x$ from the sine product by using $\cos x = \sin(x + \pi/2)$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\prod_{n=1}^{\infty} (1 - 1/n^2) = 1/2$ by telescoping.
+\end{exercise}
+
+\begin{exercise}[Proof]
+Use the sinc product to derive $\zeta(2) = \pi^2/6$ by comparing coefficients in the power series expansion.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement Vi\`{e}te's formula using nested radicals and verify it converges faster than the Wallis product. Count how many terms are needed to reach 6 decimal places of accuracy.
+\end{exercise}
+
+\begin{exercise}
+Prove Vi\`{e}te's formula $2/\pi = \prod_{k=1}^{\infty} \cos(\pi/2^{k+1})$ using the double-angle formula $\sin(2x) = 2\sin x \cos x$.
+\end{exercise}
+
+\begin{exercise}
+Show that the Euler product for $\zeta(s)$ at $s=2$ converges to $\pi^2/6$ using the first 100 primes. Compare the error with the series sum $\sum_{n=1}^{1000} 1/n^2$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\prod_{n=1}^{\infty} \cos(x/2^n) = \frac{\sin x}{x}$ using the double-angle formula repeatedly.
+\end{exercise}
+
+\begin{exercise}
+Show that the infinite product $\prod_{n=1}^{\infty} \left(1 + \frac{1}{n(n+2)}\right)$ converges to $3/2$.
+\end{exercise}
+
+\begin{exercise}[Proof]
+Prove the Weierstrass factorization theorem for the sine function: $\sin(\pi z) = \pi z \prod_{n=1}^{\infty} (1 - z^2/n^2)$.
+\end{exercise}

@@ -1,0 +1,10 @@
+% Euler's totient visualization
+\begin{tikzpicture}[scale=0.8]
+  % Circle with coprime points
+  \foreach \k/\c in {1/white, 2/red!50!black, 3/white, 4/red!50!black, 5/white, 6/white} {
+    \pgfmathsetmacro{\angle}{\k*60}
+    \fill[\c] (\angle:1.5cm) circle (4pt);
+    \node at (\angle:1.9cm) {$\k$};
+  }
+  \node[below] at (0,-2) {$n=6$: $\varphi(6)=2$ (only 1,5 are coprime)};
+\end{tikzpicture}

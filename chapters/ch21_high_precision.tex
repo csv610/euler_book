@@ -1,0 +1,555 @@
+% Chapter 21: High-Precision Computation
+% ch21_high_precision.tex
+
+\chapter{High-Precision Computation: Pi, $e$, and $\gamma$}
+
+\begin{historical}
+Euler computed mathematical constants to extraordinary precision using only pen and paper.
+His evaluation of $\pi$ to 150 digits and $e$ to many decimal places set standards that
+would not be surpassed for centuries. In this chapter, we replicate Euler's spirit using
+pure Python arbitrary-precision arithmetic --- no external libraries, no floating-point
+rounding, just integer math at whatever precision we desire.
+
+Euler's original methods included infinite series, continued fractions, and product formulas.
+We implement several of these, plus the modern AGM (Arithmetic-Geometric Mean) algorithm
+for $\pi$ and accelerated series for $\gamma$. The AGM method, discovered by Gauss but
+implemented efficiently using Euler's ideas, converges quadratically and is used in
+all modern high-precision $\pi$ computations.
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Infinite series, continued fractions, basic understanding of convergence rates.
+    \item \textbf{Programming:} Python integer arithmetic (arbitrarily large), iterative algorithms.
+\end{itemize}
+
+\section{Arbitrary-Precision Arithmetic}
+
+Standard floating-point numbers in Python (and all programming languages) use IEEE 754
+double-precision format, which gives about 15-17 significant decimal digits. For computing
+constants to hundreds or thousands of digits, we need arbitrary-precision arithmetic.
+
+Our approach stores numbers as scaled integers: a value $v$ is represented as
+$V / 10^p$ where $V$ is an exact integer and $p$ is the precision. All arithmetic
+operations are performed on integers, guaranteeing exact results (except for division,
+which truncates to the chosen precision).
+
+\subsection{The ScaledInt Class}
+
+The \texttt{ScaledInt} class provides arbitrary-precision decimal arithmetic:
+
+\begin{lstlisting}[caption={Basic high-precision arithmetic}, label=lst:hp_basic]
+from euler import ScaledInt
+
+# Create high-precision numbers
+a = ScaledInt("3.141592653589793238462643383279", 30)
+b = ScaledInt("2.718281828459045235360287471352", 30)
+
+print(f"a = {a}")
+print(f"b = {b}")
+print(f"a + b = {a + b}")
+print(f"a * b = {a * b}")
+print(f"a / b = {a / b}")
+print(f"sqrt(a) = {ScaledInt(2, 30).sqrt()}")
+\end{lstlisting}
+
+\subsection{Implementation Details}
+
+Arithmetic operations on \texttt{ScaledInt} work as follows:
+\begin{itemize}
+    \item \textbf{Addition/Subtraction:} Convert to common precision, then add/subtract integers.
+    \item \textbf{Multiplication:} Multiply integers, then divide by scale factor.
+    \item \textbf{Division:} Multiply numerator by scale, then divide.
+    \item \textbf{Square root:} Use Newton's method with integer arithmetic.
+\end{itemize}
+
+\subsection{Newton's Method for Square Roots}
+
+To compute $\sqrt{N}$ to $p$ decimal places:
+\begin{enumerate}
+\item Start with initial guess $x_0 = \lfloor \sqrt{N} \rfloor \cdot 10^{p/2}$
+\item Iterate: $x_{k+1} = \frac{1}{2}\left(x_k + \frac{N \cdot 10^p}{x_k}\right)$
+\item Converges quadratically: digits of precision double each iteration
+\end{enumerate}
+
+\begin{lstlisting}[caption={High-precision square root}, label=lst:hp_sqrt]
+from euler import ScaledInt
+
+# Compute sqrt(2) to 50 digits
+sqrt2 = ScaledInt(2, 50).sqrt()
+print(f"sqrt(2) = {sqrt2}")
+
+# Verify by squaring
+print(f"sqrt(2)^2 = {sqrt2 * sqrt2}")
+print(f"Difference from 2: {2 - sqrt2 * sqrt2}")
+\end{lstlisting}
+
+\section{Computing $\pi$}
+
+\subsection{Machin's Formula}
+
+Machin's formula (1706), contemporaneous with Euler's early work:
+\[
+\frac{\pi}{4} = 4 \arctan\frac{1}{5} - \arctan\frac{1}{239}
+\]
+
+Using the Taylor series $\arctan(x) = x - x^3/3 + x^5/5 - \cdots$, the terms
+$1/5$ and $1/239$ converge rapidly. Machin used this to compute 100 digits of $\pi$.
+
+\subsection{Convergence Analysis}
+
+The Taylor series for $\arctan(x)$ converges for $|x| \leq 1$. The error after $n$ terms is approximately:
+\[
+R_n \approx \frac{x^{2n+1}}{2n+1}
+\]
+
+For $x = 1/5$, each term reduces the error by a factor of $1/25$, so we gain approximately 1.4 decimal digits per term.
+For $x = 1/239$, convergence is even faster (about 4.4 decimal digits per term).
+
+Machin's formula therefore gains about $4 \times 1.4 = 5.6$ digits per iteration from the first term,
+minus about 4.4 digits from the second term, for a net gain of approximately 1.2 digits per term.
+
+\begin{lstlisting}[caption={Pi via Machin's formula}, label=lst:pi_machin]
+from euler import pi_machin
+
+print(f"pi (50 digits): {pi_machin(50)}")
+print(f"pi (100 digits): {pi_machin(100)}")
+print(f"pi (200 digits): {pi_machin(200)}")
+\end{lstlisting}
+
+\subsection{Other Machin-like Formulas}
+
+Euler discovered many related formulas. Some notable examples:
+
+\begin{align*}
+\frac{\pi}{4} &= 5 \arctan\frac{1}{7} + 2 \arctan\frac{3}{79} \quad \text{(Euler, 1748)} \\
+\frac{\pi}{4} &= \arctan\frac{1}{2} + \arctan\frac{1}{3} \quad \text{(valid but slow)} \\
+\frac{\pi}{4} &= 2 \arctan\frac{1}{3} + \arctan\frac{1}{7} \quad \text{(Hutton, 1789)}
+\end{align*}
+
+\begin{lstlisting}[caption={Euler's pi formula}, label=lst:pi_euler]
+from euler import pi_machin
+
+# Euler's formula: pi/4 = 5*arctan(1/7) + 2*arctan(3/79)
+print(f"pi (100 digits) via Euler: {pi_machin(100, formula='euler')}")
+\end{lstlisting}
+
+\subsection{The AGM Algorithm}
+
+The Brent--Salamin (Gauss--Legendre) algorithm converges quadratically:
+each iteration doubles the number of correct digits. This is dramatically faster
+than Machin's formula.
+
+\subsubsection{Algorithm Description}
+
+Starting with $a_0 = 1$, $b_0 = 1/\sqrt{2}$, $t_0 = 1/4$, $p_0 = 1$:
+\begin{align*}
+a_{n+1} &= \frac{a_n + b_n}{2} \\
+b_{n+1} &= \sqrt{a_n b_n} \\
+t_{n+1} &= t_n - p_n(a_n - a_{n+1})^2 \\
+p_{n+1} &= 2p_n
+\end{align*}
+
+Then $\pi \approx \frac{(a_n + b_n)^2}{4t_n}$.
+
+\subsubsection{Convergence Rate}
+
+The AGM converges quadratically: if $a_n$ and $b_n$ agree to $d$ decimal digits,
+then $a_{n+1}$ and $b_{n+1}$ agree to approximately $2d$ digits. This means that
+after $k$ iterations, we have approximately $2^k$ correct digits.
+
+For 50 digits, we need only about $\log_2(50) \approx 6$ iterations!
+
+\begin{lstlisting}[caption={Pi via AGM}, label=lst:pi_agm]
+from euler import pi_gauss_agm
+
+print(f"pi (AGM, 50 digits): {pi_gauss_agm(50)}")
+print(f"pi (AGM, 100 digits): {pi_gauss_agm(100)}")
+\end{lstlisting}
+
+After just 5 iterations, the AGM gives 50+ correct digits of $\pi$.
+
+\subsection{AGM Convergence Verification}
+
+\begin{lstlisting}[caption={Verifying AGM convergence}, label=lst:agm_verify]
+from euler import ScaledInt
+
+def agm_iterations(a0, b0, n):
+    """Compute AGM iterations and show convergence."""
+    a, b = a0, b0
+    t = ScaledInt(1, n) / 4
+    p = ScaledInt(1, n)
+    
+    print(f"AGM convergence to {n} digits:")
+    print(f"{'Iter':>4} | {'a':^30} | {'b':^30} | {'diff':^15}")
+    print("-" * 80)
+    
+    for i in range(min(10, n//10 + 2)):
+        a_new = (a + b) / 2
+        b_new = (a * b).sqrt()
+        t = t - p * (a - a_new) ** 2
+        p = 2 * p
+        a, b = a_new, b_new
+        
+        # Compute pi estimate
+        pi_est = (a + b) ** 2 / (4 * t)
+        diff = abs(a - b)
+        print(f"{i:>4} | {str(a)[:30]:^30} | {str(b)[:30]:^30} | {str(diff)[:15]:^15}")
+        
+        if diff < ScaledInt(1, n) * ScaledInt(10, -n):
+            break
+    
+    pi_final = (a + b) ** 2 / (4 * t)
+    print(f"\nFinal pi estimate: {pi_final}")
+    return pi_final
+
+agm_iterations(ScaledInt(1, 100), ScaledInt(1, 100).sqrt(2), 100)
+\end{lstlisting}
+
+\section{Computing $e$}
+
+\subsection{Series Method}
+
+Euler's original series:
+\[
+e = \sum_{n=0}^{\infty} \frac{1}{n!} = 1 + 1 + \frac{1}{2} + \frac{1}{6} + \cdots
+\]
+
+Each term adds approximately one decimal digit of precision (since $n!$ grows faster than $10^n$).
+The error after $N$ terms is bounded by $\frac{1}{N \cdot N!}$.
+
+\subsection{Continued Fraction}
+
+Euler also discovered the continued fraction for $e$:
+\[
+e = [2; 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, \ldots]
+\]
+This converges much faster than the series. The $n$-th convergent has error approximately $1/n!$.
+
+\begin{lstlisting}[caption={Computing e}, label=lst:compute_e]
+from euler import e_series, e_continued_fraction
+
+print(f"e (series, 50 digits): {e_series(50)}")
+print(f"e (continued fraction, 50 digits): {e_continued_fraction(50)}")
+\end{lstlisting}
+
+\subsection{Comparing Methods}
+
+\begin{lstlisting}[caption={Comparing e computation methods}, label=lst:e_compare]
+from euler import e_series, e_continued_fraction
+import time
+
+print("Comparing e computation methods:")
+for digits in [20, 50, 100, 200]:
+    start = time.time()
+    e1 = e_series(digits)
+    time1 = time.time() - start
+    
+    start = time.time()
+    e2 = e_continued_fraction(digits)
+    time2 = time.time() - start
+    
+    print(f"  {digits} digits: series={time1:.4f}s, CF={time2:.4f}s")
+    print(f"    Match: {e1 == e2}")
+\end{lstlisting}
+
+\section{Computing Euler's Constant $\gamma$}
+
+The Euler--Mascheroni constant is the hardest of the three to compute at high precision,
+because no simple closed-form series exists. We use the identity:
+\[
+\gamma = \sum_{k=1}^{\infty} \left(\frac{1}{k} - \ln\left(1 + \frac{1}{k}\right)\right)
+\]
+
+combined with Euler--Maclaurin acceleration. The term $\ln(1+1/k)$ is computed using
+the identity $\ln(1+1/k) = 2\,\mathrm{atanh}(1/(2k+1))$, which converges quadratically.
+
+\subsection{Euler--Maclaurin Acceleration}
+
+The asymptotic expansion gives:
+\[
+\gamma = \sum_{k=1}^{N} \left(\frac{1}{k} - \ln\left(1 + \frac{1}{k}\right)\right) + \frac{1}{2N} - \frac{1}{12N^2} + \frac{1}{120N^4} - \cdots
+\]
+
+By choosing $N$ appropriately and including correction terms, we can compute $\gamma$ to high precision.
+
+\begin{lstlisting}[caption={Computing gamma}, label=lst:compute_gamma]
+from euler import euler_gamma
+
+print(f"gamma (20 digits): {euler_gamma(20)}")
+print(f"gamma (30 digits): {euler_gamma(30)}")
+print(f"gamma (50 digits): {euler_gamma(50)}")
+\end{lstlisting}
+
+\subsection{Alternative Series for Gamma}
+
+Several other series converge faster than the basic definition:
+
+\begin{align*}
+\gamma &= \sum_{n=2}^{\infty} (-1)^n \frac{\zeta(n)}{n} \\
+\gamma &= \int_0^1 \left(\frac{1}{\ln x} + \frac{1}{1-x}\right) dx \\
+\gamma &= \lim_{n \to \infty} \left(\sum_{k=1}^n \frac{1}{k} - \ln n\right)
+\end{align*}
+
+\begin{lstlisting}[caption={Alternative gamma computation}, label=lst:gamma_alt]
+from euler import ScaledInt
+import math
+
+def gamma_zeta_series(n_terms, precision):
+    """Compute gamma using zeta series."""
+    gamma = ScaledInt(0, precision)
+    for k in range(2, n_terms + 2):
+        zeta_k = zeta_high_precision(k, precision)
+        term = ((-1) ** k) * zeta_k / k
+        gamma = gamma + term
+    return gamma
+
+def gamma_integral_approx(n_steps, precision):
+    """Approximate gamma integral."""
+    # Using trapezoidal rule on [0,1]
+    h = ScaledInt(1, precision) / n_steps
+    total = ScaledInt(0, precision)
+    
+    for i in range(n_steps):
+        x = h * (i + ScaledInt(0.5, precision))
+        f = (ScaledInt(1, precision) / x.ln() + 
+             ScaledInt(1, precision) / (ScaledInt(1, precision) - x))
+        total = total + f * h
+    
+    return total
+\end{lstlisting}
+
+\section{Zeta Values}
+
+High-precision $\pi$ enables high-precision zeta values at even integers:
+
+\begin{lstlisting}[caption={High-precision zeta values}, label=lst:zeta_hp]
+from euler import zeta_high_precision
+
+print(f"zeta(2) = {zeta_high_precision(2, 50)}")
+print(f"zeta(4) = {zeta_high_precision(4, 50)}")
+print(f"zeta(6) = {zeta_high_precision(6, 50)}")
+\end{lstlisting}
+
+For odd integers, the computation is more challenging. The series $\sum n^{-s}$ converges
+too slowly for direct computation. Accelerated series (such as Euler's transformation)
+are required.
+
+\subsection{Euler's Acceleration Technique}
+
+Euler developed a powerful series acceleration method. For a series $\sum a_n$,
+define the Euler transform:
+\[
+\sum_{n=0}^{\infty} a_n = \sum_{n=0}^{\infty} \frac{(-1)^n}{2^{n+1}} \sum_{k=0}^{n} \binom{n}{k} a_k
+\]
+
+\begin{lstlisting}[caption={Euler acceleration for zeta(3)}, label=lst:euler_accel_zeta3]
+from euler import ScaledInt
+
+def euler_accelerated_zeta3(precision, terms=100):
+    """Compute Ap\'{e}ry's constant using Euler acceleration."""
+    # Direct series is too slow, use acceleration
+    a = [ScaledInt(1, precision) / (k + 1)**3 for k in range(terms)]
+    
+    result = ScaledInt(0, precision)
+    for n in range(terms):
+        inner = ScaledInt(0, precision)
+        for k in range(n + 1):
+            binom = math.comb(n, k)
+            inner = inner + ScaledInt(binom, precision) * a[k]
+        sign = (-1) ** n
+        weight = sign / (2 ** (n + 1))
+        result = result + weight * inner
+    
+    return result
+
+# Note: This is a simplified illustration
+# Actual implementation uses more sophisticated acceleration
+\end{lstlisting}
+
+\section{Computational Complexity Analysis}
+
+\subsection{Machin's Formula}
+
+Computing $\pi$ to $d$ decimal digits using Machin's formula requires $O(d^2)$ integer operations,
+since each arctangent term requires $O(d)$ iterations and each iteration involves $O(d)$-bit arithmetic.
+
+\subsection{AGM Algorithm}
+
+The AGM algorithm requires $O(\log d)$ iterations, with each iteration involving $O(M(d))$ operations
+where $M(d)$ is the cost of multiplying $d$-bit numbers. Using fast multiplication, the total
+complexity is $O(M(d) \log d)$.
+
+\subsection{Euler's Constant}
+
+Computing $\gamma$ to $d$ digits using the accelerated series requires $O(d)$ terms,
+each involving $O(d)$-bit arithmetic. The total complexity is $O(d^2)$.
+
+\section{Fast Multiplication Algorithms}
+
+For very high precision computations, the choice of multiplication algorithm matters.
+
+\subsection{Schoolbook Multiplication}
+
+Standard $O(d^2)$ algorithm suitable for moderate precision:
+
+\begin{lstlisting}[caption={Schoolbook multiplication}, label=lst:schoolbook_mul]
+def schoolbook_multiply(a, b, precision):
+    """Multiply two high-precision numbers stored as scaled integers."""
+    scale = 10 ** precision
+    result = (a * b) // scale
+    return result
+\end{lstlisting}
+
+\subsection{Karatsuba Multiplication}
+
+Karatsuba's algorithm achieves $O(d^{\log_2 3}) \approx O(d^{1.585})$:
+
+\begin{lstlisting}[caption={Karatsuba multiplication}, label=lst:karatsuba_mul]
+def karatsuba_multiply(x, y, precision):
+    """Karatsuba fast multiplication for scaled integers."""
+    if x < 10**6 or y < 10**6:
+        return (x * y) // (10 ** precision)
+    
+    n = max(len(str(x)), len(str(y))) // 2
+    m = 10 ** n
+    
+    a, b = x // m, x % m
+    c, d = y // m, y % m
+    
+    ac = karatsuba_multiply(a, c, precision)
+    bd = karatsuba_multiply(b, d, precision)
+    ab_cd = karatsuba_multiply(a + b, c + d, precision) - ac - bd
+    
+    return (ac * m * m + ab_cd * m + bd) // (10 ** precision)
+\end{lstlisting}
+
+\subsection{FFT-based Multiplication}
+
+For extreme precision, FFT-based multiplication achieves near-linear complexity:
+
+\begin{lstlisting}[caption={FFT multiplication concept}, label=lst:fft_mul]
+def fft_multiply_concept(a, b, precision):
+    """
+    Conceptual FFT-based multiplication.
+    In practice, use libraries like GMP for production code.
+    """
+    # Convert to base-2^30 representation for FFT
+    # Apply FFT, pointwise multiply, inverse FFT
+    # Reconstruct result
+    pass  # Implementation omitted for brevity
+\end{lstlisting}
+
+\section{Modern Relevance}
+
+High-precision computation is essential in: verifying the Riemann Hypothesis (zeta zeros
+computed to trillions of digits), testing mathematical constants for normality, cryptographic
+key generation, and benchmarking computer hardware. The Chudnovsky algorithm (used to compute
+$\pi$ to trillions of digits) is a descendant of Euler's series methods.
+
+\subsection{Pi Record Computations}
+
+Some notable $\pi$ record computations:
+\begin{itemize}
+\item 1949: ENIAC computer computed 2037 digits
+\item 1989: Chudnovsky brothers computed 1 billion digits
+\item 2021: Google computed 100 trillion digits using cloud computing
+\end{itemize}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why not just use Python's built-in float?} \\
+Python floats are IEEE 754 doubles with ~15-17 significant digits. For computing $\pi$ to 100 digits or verifying that $\zeta(3)$ is irrational, we need exact arithmetic. Our \texttt{ScaledInt} type stores every digit exactly.
+
+\item \textbf{Q: How does the AGM algorithm work?} \\
+Starting with $a_0=1$, $b_0=1/\sqrt{2}$, $t_0=1/4$, $p_0=1$, the iterations
+$a_{n+1}=(a_n+b_n)/2$, $b_{n+1}=\sqrt{a_nb_n}$, $t_{n+1}=t_n-p_n(a_n-a_{n+1})^2$,
+$p_{n+1}=2p_n$ converge quadratically to values from which $\pi$ is extracted.
+
+\item \textbf{Q: Why is $\gamma$ harder to compute than $\pi$ and $e$?} \\
+Unlike $\pi$ and $e$, $\gamma$ has no known closed-form expression in terms of other constants, no simple continued fraction, and no rapid-converging series. The best known methods converge as $O(1/N)$ even with acceleration.
+
+\item \textbf{Q: What is the fastest known algorithm for $\pi$?} \\
+The Chudnovsky algorithm (1988), which converges 14 digits per term, is the fastest. It is based on Ramanujan's series and is used by virtually all $\pi$-record computations.
+
+\item \textbf{Q: Can this compute $\pi$ to a million digits?} \\
+Yes, in principle. The AGM algorithm would need about $\log_2(10^6) \approx 20$ iterations. However, the Python implementation is not optimized for extreme precision --- production code uses specialized libraries like GMP.
+
+\item \textbf{Q: How does the continued fraction for $e$ work?} \\
+The continued fraction $e = [2; 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, \ldots]$ has a regular pattern. Each convergent $p_n/q_n$ gives an approximation with error $|e - p_n/q_n| < 1/q_n^2$.
+
+\item \textbf{Q: What is the relationship between Machin's formula and Euler's work?} \\
+Euler studied Machin's formula extensively and discovered many related formulas. He showed that if $\arctan(1/a) + \arctan(1/b) = \arctan(1/c)$, then $c = (ab-1)/(a+b)$. This allows generating infinitely many such formulas.
+
+\item \textbf{Q: What is the Chudnovsky algorithm?} \\
+The Chudnovsky algorithm uses the hypergeometric series:
+\[
+\frac{1}{\pi} = 12 \sum_{k=0}^{\infty} \frac{(-1)^k (6k)! (13591409 + 545140134k)}{(3k)!(k!)^3 640320^{3k+3/2}}
+\]
+It converges at about 14 digits per term, making it extremely efficient for record computations.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Implement a high-precision computation of $\sqrt{2}$ using Newton's method. Compare the convergence rate with the AGM algorithm for $\pi$.
+\end{exercise}
+
+\begin{exercise}
+Use the continued fraction for $e$ to compute $e$ to 100 digits. How many terms are needed?
+\end{exercise}
+
+\begin{exercise}
+Verify that $\zeta(2) = \pi^2/6$ to 30 digits using your high-precision $\pi$ and zeta implementations.
+\end{exercise}
+
+\begin{exercise}
+Derive Machin's formula from the identity $\arctan(1/2) + \arctan(1/3) = \arctan(1)$ and compute $\pi$ to 20 digits using this alternative formula.
+\end{exercise}
+
+\begin{exercise}
+Show that the error in the AGM algorithm decreases quadratically by computing $\pi$ to increasing precision and tracking the number of correct digits after each iteration.
+\end{exercise}
+
+\begin{exercise}
+Implement Euler's acceleration technique for the series $\sum 1/n^2$ and compare its convergence with the direct partial sum.
+\end{exercise}
+
+\begin{exercise}
+Use the identity $\gamma = \int_0^1 \frac{1-x}{(1-x)\ln x} dx$ to compute $\gamma$ to 10 decimal places using numerical integration.
+\end{exercise}
+
+\begin{exercise}
+Prove that the continued fraction convergents of $e$ satisfy $|e - p_n/q_n| < 1/q_n^2$. How many convergents are needed to get 50 correct digits?
+\end{exercise}
+
+\begin{exercise}
+Compare the computational complexity of computing $\pi$ to $d$ digits using Machin's formula versus the AGM algorithm. How many iterations does each require for $d = 100$?
+\end{exercise}
+
+\begin{exercise}
+Prove that the AGM algorithm satisfies $\pi \approx \frac{(a_n + b_n)^2}{4t_n}$ by showing that $a_n \to \frac{\pi}{2M(1,1/\sqrt{2})}$ where $M$ is the arithmetic-geometric mean.
+\end{exercise}
+
+\begin{exercise}
+Compute $\pi$ to 100 digits using both Machin's formula and the AGM algorithm. Compare the number of operations required for each method.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement the Chudnovsky algorithm and compute $\pi$ to 50 digits. Compare the number of terms required with Machin's formula.
+\end{exercise}
+
+\begin{exercise}
+Show that the error in the series $\sum_{n=1}^{N} 1/n^2$ for $\zeta(2)$ is approximately $1/N$. Use Euler's acceleration to improve convergence.
+\end{exercise}
+
+\begin{exercise}
+Implement Karatsuba multiplication and use it to speed up high-precision arithmetic. Compare performance with schoolbook multiplication for $d = 1000$ digits.
+\end{exercise}
+
+\begin{exercise}
+Prove that if $\arctan(1/a) + \arctan(1/b) = \arctan(1/c)$, then $c = (ab-1)/(a+b)$. Use this to generate new Machin-like formulas for $\pi$.
+\end{exercise}

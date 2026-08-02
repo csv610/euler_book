@@ -1,0 +1,355 @@
+% Chapter 5: The Basel Problem and Zeta Values
+% ch05_basel.tex
+
+\chapter{The Basel Problem and the Riemann Zeta Function}
+
+\begin{historical}
+In 1734, Euler discovered that $\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}$, solving the famous Basel problem that had resisted mathematicians for nearly a century. This remarkable result connected the discrete world of number theory with the continuous world of geometry through the appearance of $\pi$. The generalization to $\zeta(s) = \sum_{n=1}^{\infty} n^{-s}$ became one of the most important functions in mathematics, central to analytic number theory and the Riemann Hypothesis.
+\end{historical}
+
+\section{Prerequisites}
+
+To understand this chapter, you need:
+\begin{itemize}
+    \item \textbf{Calculus:} Infinite series, Taylor series expansions, convergence tests
+    \item \textbf{Complex Analysis:} Basic properties of analytic functions
+    \item \textbf{Programming:} Python series summation and error analysis
+\end{itemize}
+
+\section{The Basel Problem}
+
+The Basel problem asks for the exact sum of the reciprocals of the squares:
+\[
+\zeta(2) = \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{1}{1^2} + \frac{1}{2^2} + \frac{1}{3^2} + \cdots
+\]
+
+\subsection{Euler's Original Proof}
+
+Euler's brilliant insight was to treat $\sin x / x$ as an infinite polynomial. Since
+$\frac{\sin x}{x} = 1 - \frac{x^2}{3!} + \frac{x^4}{5!} - \cdots$ and has zeros at
+$x = \pm n\pi$ for $n = 1, 2, 3, \ldots$, we can write:
+\[
+\frac{\sin x}{x} = \prod_{n=1}^{\infty} \left(1 - \frac{x^2}{n^2 \pi^2}\right)
+\]
+
+Expanding the product and comparing the $x^2$ coefficient with the Taylor series:
+\[
+-\frac{1}{3!} = -\frac{1}{\pi^2} \sum_{n=1}^{\infty} \frac{1}{n^2}
+\]
+yielding $\zeta(2) = \frac{\pi^2}{6}$.
+
+\subsection{Numerical Verification}
+
+\begin{lstlisting}[caption={Convergence to $\pi^2/6$}, label=lst:basel]
+from euler import euler_constant, euler_mascheroni_gamma
+import math
+
+print("Basel problem verification:")
+for n in [10, 100, 1000, 10000]:
+    s = sum(1/k**2 for k in range(1, n+1))
+    print(f"  N={n:5d}: sum = {s:.10f}, error = {abs(s - math.pi**2/6):.2e}")
+\end{lstlisting}
+
+\section{The Riemann Zeta Function}
+
+\subsection{Definition and Domain}
+
+The Riemann zeta function is defined for $\Re(s) > 1$ by:
+\[
+\zeta(s) = \sum_{n=1}^{\infty} \frac{1}{n^s}
+\]
+Riemann extended this to the entire complex plane (except $s = 1$) via analytic continuation.
+The functional equation relates $\zeta(s)$ to $\zeta(1-s)$:
+\[
+\zeta(s) = 2^s \pi^{s-1} \sin\left(\frac{\pi s}{2}\right) \Gamma(1-s) \zeta(1-s)
+\]
+
+\subsection{Special Values}
+
+Euler computed $\zeta(2n)$ for all positive integers $n$:
+\[
+\zeta(2n) = \frac{(-1)^{n+1} B_{2n} (2\pi)^{2n}}{2(2n)!}
+\]
+where $B_{2n}$ are Bernoulli numbers.
+
+\begin{lstlisting}[caption={Euler's exact zeta values}, label=lst:zeta_even]
+import math
+from fractions import Fraction
+
+def bernoulli(n):
+    """Compute Bernoulli number B_n."""
+    if n == 0: return Fraction(1)
+    if n == 1: return Fraction(-1, 2)
+    if n % 2 == 1: return Fraction(0)
+    B = [Fraction(0)] * (n+1)
+    B[0] = Fraction(1)
+    for m in range(1, n+1):
+        B[m] = Fraction(1, m+1) * sum(Fraction(math.comb(m+1, k)) * B[k] for k in range(m))
+    return B[n]
+
+print("Exact zeta values at even integers:")
+for n in [1, 2, 3, 4]:
+    B = bernoulli(2*n)
+    zeta = ((-1)**(n+1) * B * (2*math.pi)**(2*n)) / (2 * math.factorial(2*n))
+    print(f"  zeta({2*n}) = {zeta:.10f}")
+\end{lstlisting}
+
+\section{Euler Product Formula}
+
+\subsection{The Product over Primes}
+
+Euler discovered the fundamental connection between zeta and primes:
+\[
+\zeta(s) = \prod_{p \text{ prime}} \left(1 - \frac{1}{p^s}\right)^{-1}, \quad \Re(s) > 1
+\]
+This elegant formula expresses the zeta function as an infinite product over all primes.
+
+\subsection{Computational Verification}
+
+\begin{lstlisting}[caption={Euler product for $\zeta(2)$}, label=lst:euler_product_zeta]
+from euler import euler_product_formula
+import math
+
+print("Euler product for zeta(2):")
+for n_primes in [10, 50, 100, 200, 500, 1000]:
+    approx = euler_product_formula(2, n_primes)
+    exact = math.pi**2 / 6
+    print(f"  {n_primes:4d} primes: {approx:.10f}  error = {abs(exact - approx):.2e}")
+\end{lstlisting}
+
+\section{Acceleration Techniques}
+
+\subsection{Euler-Maclaurin Summation}
+
+For faster convergence, we use the Euler-Maclaurin formula:
+\[
+\sum_{n=1}^{N} \frac{1}{n^s} \approx \zeta(s) - \frac{N^{1-s}}{1-s} - \frac{1}{2N^s} + \frac{s}{12N^{s+1}}
+\]
+
+\begin{lstlisting}[caption={Euler acceleration for the Basel series}, label=lst:euler_acceleration_basel]
+def zeta_accelerated(s, N=100000):
+    """Compute zeta(s) using Euler-Maclaurin acceleration."""
+    import math
+    partial = sum(n**(-s) for n in range(1, N+1))
+    correction = N**(1-s)/(s-1) + 0.5*N**(-s) + s/12*N**(-s-1)
+    return partial + correction
+
+print("Accelerated zeta(2):")
+for N in [100, 1000, 10000]:
+    approx = zeta_accelerated(2, N)
+    exact = math.pi**2/6
+    print(f"  N={N:6d}: {approx:.10f}  error={abs(exact-approx):.2e}")
+\end{lstlisting}
+
+\section{Connection to Euler's Constant}
+
+\subsection{Harmonic Series and $\gamma$}
+
+Euler's constant appears naturally in the asymptotic expansion:
+\[
+\sum_{n=1}^{N} \frac{1}{n} = \log N + \gamma + \frac{1}{2N} - \frac{1}{12N^2} + \cdots
+\]
+
+\begin{lstlisting}[caption={Computing $\gamma$ from harmonic numbers}, label=lst:euler_constant]
+from euler import euler_constant, euler_mascheroni_gamma
+
+print("Computing Euler's constant via harmonic numbers:")
+for N in [10, 100, 1000, 10000, 100000, 1000000]:
+    H_N = sum(1/n for n in range(1, N+1))
+    gamma_approx = H_N - math.log(N)
+    exact = euler_mascheroni_gamma()
+    print(f"  N={N:7d}: gamma={gamma_approx:.10f}  error={abs(exact-gamma_approx):.2e}")
+\end{lstlisting}
+
+\section{Modern Developments}
+
+\subsection{The Riemann Hypothesis}
+
+The Riemann Hypothesis states that all non-trivial zeros of $\zeta(s)$ lie on the critical line
+$\Re(s) = 1/2$. This remains one of the most important unsolved problems in mathematics.
+
+\subsection{Computational Records}
+
+The modern record for $\zeta(s)$ computation exceeds $10^{13}$ decimal places, achieved using
+fast multiplication algorithms and distributed computing.
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why was the Basel problem so hard to solve?} \\
+The challenge was bridging discrete sums with continuous functions. Previous methods could handle telescoping series or geometric series, but this required treating $\sin x$ as an infinite polynomial---a novel idea in 1735.
+
+\item \textbf{Q: Does Euler's method for the Basel problem constitute a rigorous proof?} \\
+Euler's original argument compared coefficients but did not justify equating the infinite product expansion with the Taylor series. The rigorous justification came later using Weierstrass factorization theorem.
+
+\item \textbf{Q: Why do $\zeta(2n)$ always involve $\pi^{2n}$ but $\zeta(2n+1)$ does not?} \\
+Euler's formula $\zeta(2n) = \frac{(-1)^{n+1} B_{2n} (2\pi)^{2n}}{2(2n)!}$ expresses even zeta values in terms of Bernoulli numbers and powers of $\pi$. No comparable closed form is known for odd zeta values.
+
+\item \textbf{Q: How fast does the Basel partial sum converge?} \\
+Very slowly. The error after $n$ terms is approximately $1/n$. To get 6 decimal places requires roughly $10^6$ terms. This is why series acceleration techniques are essential.
+
+\item \textbf{Q: What is the connection between the Euler product and the Basel problem?} \\
+The Euler product $\zeta(2) = \prod_p (1 - p^{-2})^{-1}$ expresses $\pi^2/6$ as a product over primes, illustrating the deep unity between analysis and number theory.
+
+\item \textbf{Q: Can I compute $\zeta(s)$ for non-integer $s$?} \\
+Yes. The series converges for $\Re(s) > 1$. For other values, analytic continuation via the functional equation extends the domain.
+
+\item \textbf{Q: What is the significance of the Riemann Hypothesis?} \\
+If proven, it would give the strongest possible bound on the error term in the prime number theorem.
+\end{itemize}
+
+\begin{exercise}
+Use the Euler product to prove there are infinitely many primes.
+\end{exercise}
+
+\begin{exercise}
+Derive $\zeta(4)$ using the product expansion of $\sin x / x$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\zeta(2n) \to 1$ as $n \to \infty$.
+\end{exercise}
+
+\begin{exercise}
+Compute $\gamma$ using the integral representation $\gamma = \int_0^1 \frac{1-e^{-t}}{t} dt - \int_1^{\infty} \frac{e^{-t}}{t} dt$ and compare with the harmonic series method.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\sum_{n=1}^{\infty} \frac{1}{n^4} = \frac{\pi^4}{90}$ by comparing coefficients in the sine product expansion.
+\end{exercise}
+
+\begin{exercise}
+Use Euler's acceleration technique to compute $\zeta(2)$ to 8 decimal places using only 10 terms of the accelerated series.
+\end{exercise}
+
+\begin{exercise}
+Show that the Euler product for $\zeta(2)$ converges more slowly than the original series. Compute the error after using the first 1000 primes versus the first 1000 terms of the series.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\zeta(2n) = \frac{(-1)^{n+1} B_{2n} (2\pi)^{2n}}{2(2n)!}$ by comparing the coefficient of $x^{2n}$ in the Taylor series and product expansion of $\sin x / x$.
+\end{exercise}
+
+\begin{exercise}
+Use the functional equation for $\zeta(s)$ to compute $\zeta(-2)$, $\zeta(-4)$, and $\zeta(-6)$. Explain why these are all zero.
+\end{exercise}
+
+\begin{exercise}
+Compute the first 10 Bernoulli numbers using the generating function $x/(e^x - 1)$ and verify Euler's formula for $\zeta(2)$, $\zeta(4)$, and $\zeta(6)$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\sum_{n=1}^{\infty} \frac{1}{n^6} = \frac{\pi^6}{945}$ using the sine product expansion.
+\end{exercise}
+
+\begin{exercise}
+Use the Euler product to prove that there are infinitely many primes. Show that $\log \zeta(s) = \sum_p \sum_{k=1}^\infty \frac{1}{k p^{ks}}$.
+\end{exercise}
+
+\begin{exercise}
+Prove the formula $\zeta(2n) = \frac{(-1)^{n+1} B_{2n} (2\pi)^{2n}}{2(2n)!}$ by comparing coefficients in the product expansion of $\sin x$.
+\end{exercise}
+
+\begin{exercise}
+Show that the series $\sum_{n=1}^\infty \frac{1}{n^4}$ converges to $\frac{\pi^4}{90}$ by computing the coefficient of $x^4$ in the product expansion of $\frac{\sin x}{x}$.
+\end{exercise}
+
+\begin{exercise}
+Use the functional equation $\zeta(s) = 2^s \pi^{s-1} \sin(\pi s/2) \Gamma(1-s) \zeta(1-s)$ to compute $\zeta(-2)$, $\zeta(-4)$, and $\zeta(-6)$. Explain why these are all zero.
+\end{exercise}
+
+\begin{exercise}
+Compute the first 10 Bernoulli numbers using the generating function $\frac{x}{e^x - 1} = \sum_{n=0}^\infty \frac{B_n x^n}{n!}$ and verify Euler's formula for $\zeta(2)$, $\zeta(4)$, and $\zeta(6)$.
+\end{exercise}
+
+\begin{exercise}
+Show that the Dirichlet eta function $\eta(s) = \sum_{n=1}^\infty \frac{(-1)^{n-1}}{n^s}$ converges for $\Re(s) > 0$ and satisfies $\eta(s) = (1 - 2^{1-s})\zeta(s)$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\sum_{n=1}^\infty \frac{1}{n^2 + a^2} = \frac{\pi a \coth(\pi a) - 1}{2a^2}$ using the partial fraction expansion of $\coth$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\zeta(s) \to 1$ as $\Re(s) \to \infty$ and explain why this follows from the definition.
+\end{exercise}
+
+\begin{exercise}
+Compute the first 100 terms of the series for $\zeta(2)$ and compare with $\frac{\pi^2}{6}$. Estimate the error using the integral test remainder bound.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\zeta(s) > 1$ for all real $s > 1$ and show that $\zeta(s) \to \infty$ as $s \to 1^+$.
+\end{exercise}
+
+\begin{exercise}
+Use the Euler-Maclaurin formula to accelerate the convergence of $\zeta(2)$. Compare the error after 10 terms with and without acceleration.
+\end{exercise}
+
+\begin{exercise}
+Show that the average order of the divisor function $d(n)$ is $\log n$ by proving $\sum_{n \le x} d(n) \sim x \log x$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\sum_{n=1}^\infty \frac{d(n)}{n^s} = \zeta(s)^2$ and explain the combinatorial interpretation.
+\end{exercise}
+
+\begin{exercise}
+Compute $\zeta(2)$ to 10 decimal places using 1000 terms of the accelerated series. Compare with the exact value.
+\end{exercise}
+
+\begin{exercise}
+Show that $\prod_{n=1}^\infty \cos\left(\frac{x}{2^n}\right) = \frac{\sin x}{x}$ by using the double-angle formula repeatedly.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\zeta(3)$ is irrational (Apéry's theorem, 1978). Discuss the significance of this result.
+\end{exercise}
+
+\begin{exercise}
+Use the functional equation to show that $\zeta(-2n) = 0$ for all positive integers $n$. These are called the trivial zeros.
+\end{exercise}
+
+\begin{exercise}
+Show that $\zeta(0) = -\frac{1}{2}$ by taking the limit $s \to 0$ in the functional equation.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\zeta'(0) = -\frac{1}{2}\log(2\pi)$ using the functional equation and properties of the gamma function.
+\end{exercise}
+
+\begin{exercise}
+Use the Weierstrass product for the gamma function to derive the functional equation for $\zeta(s)$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\zeta(s)$ has no zeros on the line $\Re(s) = 1$. This is a key step in the proof of the prime number theorem.
+\end{exercise}
+
+\begin{exercise}
+Compute the sum $\sum_{n=1}^\infty \frac{\mu(n)}{n^2}$ where $\mu$ is the Möbius function. Show it equals $\frac{1}{\zeta(2)}$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\sum_{d|n} \mu(d) = 0$ for $n > 1$ and $\sum_{d|n} \frac{1}{d} = \frac{\sigma(n)}{n}$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\zeta(s) = \frac{1}{\Gamma(s)} \int_0^\infty \frac{t^{s-1}}{e^t - 1} dt$ for $\Re(s) > 1$. This is the integral representation of the zeta function.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\zeta(s)$ can be analytically continued to the half-plane $\Re(s) > 0$ (except $s=1$) using the formula $\zeta(s) = \frac{1}{1-2^{1-s}} \sum_{n=1}^\infty \frac{(-1)^{n-1}}{n^s}$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\zeta(1+s) \sim \frac{1}{s}$ as $s \to 0$ by analyzing the pole at $s=1$.
+\end{exercise}
+
+\begin{exercise}
+Use the Hurwitz zeta function $\zeta(s,a) = \sum_{n=0}^\infty \frac{1}{(n+a)^s}$ to express $\zeta(s)$ as $\zeta(s,1)$.
+\end{exercise}
+
+\begin{exercise}
+Prove the reflection formula $\zeta(1-s) = \frac{2}{(2\pi)^s} \Gamma(s) \cos(\frac{\pi s}{2}) \zeta(s)$ for $0 < \Re(s) < 1$.
+\end{exercise}

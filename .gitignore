@@ -1,0 +1,16 @@
+*.pdf
+*.log
+*.aux
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.maf
+*.mtc*
+*.ptc*
+*.idx
+.pytest_cache/
+build/
+__pycache__/
+*.pyc
+*.pyo

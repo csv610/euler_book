@@ -1,0 +1,491 @@
+% Chapter 1: Euler's Totient Function and Theorems
+% ch01_totient.tex
+
+\chapter{Euler's Totient Function and Theorems}
+
+\begin{historical}
+Euler introduced the totient function $\varphi(n)$ (also written $\phi(n)$) in 1763,
+counting the positive integers $\le n$ that are coprime to $n$. This function
+generalizes Fermat's little theorem and plays a central role in modern cryptography.
+The function appears in Euler's work on the RSA cryptosystem predecessor and
+in the theory of cyclotomic fields.
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Basic divisibility and congruence arithmetic, the Euclidean algorithm for $\gcd$, understanding of prime factorization.
+    \item \textbf{Programming:} Python functions, loops, and modular exponentiation via the built-in `pow(base, exp, mod)` function.
+\end{itemize}
+
+\section{Definition and Basic Properties}
+
+The \textbf{Euler totient function} $\varphi(n)$ counts the integers $1 \le k \le n$ with $\gcd(k,n) = 1$.
+
+\[
+\varphi(n) = |\{k \in \mathbb{Z} : 1 \le k \le n,\ \gcd(k,n) = 1\}|
+\]
+
+For $n = p_1^{e_1} p_2^{e_2} \cdots p_k^{e_k}$, the formula is:
+\[
+\varphi(n) = n \prod_{p|n} \left(1 - \frac{1}{p}\right)
+\]
+
+\begin{lstlisting}[caption={Computing the totient function}, label=lst:totient]
+from euler import euler_totient, euler_totient_sieve, euler_totient_theorem
+
+# Individual values
+for n in range(1, 21):
+    print(f"\varphi({n:2d}) = {euler_totient(n):2d}")
+
+# Sieve for many values
+phi = euler_totient_sieve(30)
+print(f"\n\varphi(1..30) = {phi[1:]}")
+\end{lstlisting}
+
+\section{Multiplicativity}
+
+\begin{theorem}[Multiplicativity of $\varphi$]
+If $\gcd(m,n) = 1$, then $\varphi(mn) = \varphi(m)\varphi(n)$.
+\end{theorem}
+
+\begin{proof}
+This follows from the Chinese Remainder Theorem. The map $x \mapsto (x \bmod m, x \bmod n)$
+gives a bijection between $(\mathbb{Z}/mn\mathbb{Z})^\times$ and $(\mathbb{Z}/m\mathbb{Z})^\times \times (\mathbb{Z}/n\mathbb{Z})^\times$ when $\gcd(m,n) = 1$.
+\end{proof}
+
+\begin{theorem}[Totient of Prime Powers]
+For a prime $p$ and positive integer $e$:
+\[
+\varphi(p^e) = p^e - p^{e-1} = p^{e-1}(p-1)
+\]
+\end{theorem}
+
+\begin{proof}
+The integers $1, 2, \ldots, p^e$ that are NOT coprime to $p^e$ are exactly those divisible by $p$.
+These are $p, 2p, 3p, \ldots, p^{e-1} \cdot p = p^e$, giving $p^{e-1}$ such integers.
+Therefore $\varphi(p^e) = p^e - p^{e-1}$.
+\end{proof}
+
+\section{Computational Values}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|c|c|c|c|c|c}
+$n$ & 1 & 2 & 3 & 4 & 5 & 6 \\
+\hline
+$\varphi(n)$ & 1 & 1 & 2 & 2 & 4 & 2 \\
+\end{tabular}
+\caption{Small values of Euler's totient function}
+\label{tab:totient_small}
+\end{table}
+
+\begin{lstlisting}[caption={Totient function values}, label=lst:totient_values]
+from euler import euler_totient
+
+print("n    \varphi(n)    Reason")
+print("---  ------  ---------------------------")
+for n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+    if n == 1:
+        reason = "\varphi(1) = 1 by convention"
+    elif n == 2:
+        reason = "\varphi(2) = 1 (only 1)"
+    elif n == 3:
+        reason = "\varphi(3) = 2 (1,2)"
+    else:
+        reason = f"\varphi({n}) computed"
+    print(f"{n:3d}  {euler_totient(n):6d}  {reason}")
+\end{lstlisting}
+
+\section{Euler's Theorem}
+
+\textbf{Theorem (Euler, 1763).} If $\gcd(a,n) = 1$, then $a^{\varphi(n)} \equiv 1 \pmod{n}$.
+
+This generalizes Fermat's little theorem (where $n=p$ is prime, so $\varphi(p) = p-1$).
+
+\begin{proof}
+Let $a$ be coprime to $n$. Consider the set $S = \{r_1, r_2, \ldots, r_{\varphi(n)}\}$ of integers
+in $\{1, 2, \ldots, n\}$ coprime to $n$. Multiplying each element by $a$ gives the set
+$aS = \{ar_1, ar_2, \ldots, ar_{\varphi(n)}\}$. Since $\gcd(a,n) = 1$, each $ar_i$ is also coprime to $n$.
+Moreover, if $ar_i \equiv ar_j \pmod{n}$, then $r_i \equiv r_j \pmod{n}$ (since $a$ is invertible),
+so the elements of $aS$ are all distinct modulo $n$.
+
+Therefore $aS$ is a permutation of $S$ modulo $n$, and:
+\[
+\prod_{i=1}^{\varphi(n)} ar_i \equiv \prod_{i=1}^{\varphi(n)} r_i \pmod{n}
+\]
+Since each $r_i$ is coprime to $n$, we can cancel $\prod r_i$ from both sides:
+\[
+a^{\varphi(n)} \equiv 1 \pmod{n}
+\]
+\end{proof}
+
+\begin{lstlisting}[caption={Euler's theorem and Fermat's little theorem}, label=lst:euler_theorem]
+from euler import euler_totient_theorem, fermat_little_theorem, euler_totient
+
+print("Euler's theorem: a^\varphi(n) \equiv 1 (mod n) for gcd(a,n)=1")
+for a, n in [(2, 9), (3, 10), (5, 12), (7, 15)]:
+    phi = euler_totient(n)
+    result = pow(a, phi, n)
+    print(f"  {a}^{phi} \equiv {result} (mod {n})  [gcd({a},{n})={__import__('math').gcd(a,n)}]")
+
+print("\nFermat's little theorem: a^(p-1) \equiv 1 (mod p)")
+for a, p in [(2, 7), (3, 11), (5, 13), (7, 13)]:
+    print(f"  {a}^{p-1} \equiv {pow(a, p-1, p)} (mod {p})")
+\end{lstlisting}
+
+\section{The Totient Sum Function}
+
+The sum of totient values over divisors:
+
+\begin{theorem}
+$\sum_{d|n} \varphi(d) = n$
+\end{theorem}
+
+\begin{proof}
+Group the integers $1, 2, \ldots, n$ by their gcd with $n$. For each divisor $d$ of $n$,
+the numbers $k$ with $\gcd(k,n) = d$ are those of the form $k = dm$ where $\gcd(m, n/d) = 1$.
+There are $\varphi(n/d)$ such values, so:
+\[
+n = \sum_{k=1}^n 1 = \sum_{d|n} \varphi(d)
+\]
+\end{proof}
+
+\begin{lstlisting}[caption={Sum of totients over divisors}, label=lst:totient_sum]
+from euler import euler_totient
+
+print("Verifying sum_{d|n} \varphi(d) = n:")
+for n in [1, 2, 3, 4, 5, 6, 10, 12, 24]:
+    divisors = [d for d in range(1, n+1) if n % d == 0]
+    sum_phi = sum(euler_totient(d) for d in divisors)
+    print(f"  n={n:2d}: divisors={divisors}, sum \varphi = {sum_phi}, n = {n}, match = {sum_phi == n}")
+\end{lstlisting}
+
+\section{Applications to Cryptography}
+
+The totient function is fundamental in:
+\begin{itemize}
+    \item \textbf{RSA cryptography:} Key generation uses $\varphi(n) = (p-1)(q-1)$
+    \item \textbf{Primitive roots:} $\varphi(p-1)$ primitive roots modulo prime $p$
+    \item \textbf{Cyclotomic polynomials:} $\Phi_n(x)$ has degree $\varphi(n)$
+\end{itemize}
+
+\subsection{RSA Key Generation}
+
+The RSA cryptosystem works as follows:
+
+\begin{enumerate}
+\item Choose two large primes $p$ and $q$
+\item Compute $n = pq$ and $\varphi(n) = (p-1)(q-1)$
+\item Choose $e$ such that $\gcd(e, \varphi(n)) = 1$
+\item Compute $d = e^{-1} \pmod{\varphi(n)}$
+\item Public key: $(n, e)$, Private key: $(n, d)$
+\end{enumerate}
+
+Encryption: $c \equiv m^e \pmod{n}$\
+Decryption: $m \equiv c^d \pmod{n}$
+
+\begin{theorem}[RSA Correctness]
+For any message $m < n$, decrypting the encrypted message recovers $m$:
+\[
+(c^d \bmod n) = (m^e)^d \bmod n = m^{ed} \bmod n = m
+\]
+since $ed \equiv 1 \pmod{\varphi(n)}$ implies $ed = 1 + k\varphi(n)$ for some integer $k$,
+and by Euler's theorem $m^{k\varphi(n)} \equiv 1 \pmod{n}$ when $\gcd(m,n) = 1$.
+\end{theorem}
+
+\begin{lstlisting}[caption={RSA key generation}, label=lst:rsa]
+from euler import euler_totient
+import random
+
+# Generate small RSA keys for demonstration
+def generate_rsa_keys(bits=16):
+    # In practice, use cryptographically secure primes
+    p = 65537  # A common choice for p
+    q = 65521
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    
+    # Choose e (commonly 65537)
+    e = 65537
+    while euler_totient(e) != euler_totient(e):
+        e = random.randrange(3, phi, 2)
+        if __import__('math').gcd(e, phi) == 1:
+            break
+    
+    # Compute d = e^(-1) mod phi
+    d = pow(e, -1, phi)
+    return n, e, d
+
+n, e, d = generate_rsa_keys()
+print(f"RSA modulus n = {n}")
+print(f"Public exponent e = {e}")
+print(f"Private exponent d = {d}")
+print(f"Verification: e*d mod \varphi(n) = {e*d % 5948838576} (should be 1)")
+\end{lstlisting}
+
+\section{Modern Relevance}
+
+The totient function is not merely a historical curiosity---it is the backbone of modern public-key cryptography. The RSA encryption scheme, used to secure virtually every online transaction, email, and government communication, relies on the computational difficulty of computing $\varphi(n)$ without knowing the prime factorization of $n$. Given a public key $(n, e)$, an attacker who can efficiently compute $\varphi(n)$ can recover the private key and break the encryption. This connection between an 18th-century number-theoretic function and 21st-century cybersecurity is one of the most striking examples of pure mathematics serving practical needs.
+
+\section{Computational Complexity}
+
+\subsection{Computing $\varphi(n)$}
+\begin{itemize}
+\item Naive method: $O(\sqrt{n})$ (trial division)
+\item Sieve method: $O(n \log \log n)$ for all values up to $n$
+\item Using prime factorization: $O(\sqrt{n})$ per value, but fast after factorization
+\end{itemize}
+
+\subsection{RSA Key Generation}
+\begin{itemize}
+\item Time to generate key: $O(\log^3 n)$ for $n$-bit modulus (probabilistic primality testing)
+\item Security: Based on hardness of factoring $n = pq$ and computing $\varphi(n)$
+\end{itemize}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why is $\varphi(1) = 1$?} \\
+The integer $1$ is coprime to itself ($\gcd(1,1) = 1$), so it is counted. Thus $\varphi(1) = 1$.
+
+\item \textbf{Q: Is the totient function multiplicative?} \\
+Yes, but only \emph{completely} for coprime arguments: if $\gcd(m,n) = 1$, then $\varphi(mn) = \varphi(m)\varphi(n)$. If $\gcd(m,n) \neq 1$, this equality generally fails. For example, $\varphi(2 \cdot 3) = \varphi(6) = 2 = \varphi(2)\varphi(3)$, but $\varphi(2 \cdot 4) = \varphi(8) = 4 \neq \varphi(2)\varphi(4) = 1 \cdot 2 = 2$.
+
+\item \textbf{Q: How do I compute $\varphi(n)$ for a large $n$?} \\
+Factor $n$ into primes: $n = p_1^{e_1} \cdots p_k^{e_k}$. Then $\varphi(n) = n \prod_{i=1}^k (1 - 1/p_i)$. The bottleneck is factoring $n$, not the formula itself. For many values, a sieve (as shown in the code) is more efficient.
+
+\item \textbf{Q: Why does Euler's theorem generalize Fermat's little theorem?} \\
+Fermat's little theorem is the special case $n = p$ (prime), where $\varphi(p) = p-1$. Euler's theorem holds for any $n$ with $\gcd(a,n) = 1$, reducing to Fermat's when $n$ is prime.
+
+\item \textbf{Q: What is the maximum value of $\varphi(n)/n$?} \\
+$\varphi(n)/n = \prod_{p|n}(1 - 1/p)$, which is maximized when $n$ is prime, giving $(p-1)/p \to 1$ as $p \to \infty$. The minimum occurs when $n$ has many small prime factors; for example, $\varphi(n)/n \geq 1/\log\log n$ (Robin's inequality).
+
+\item \textbf{Q: How is the totient function used in RSA?} \\
+In RSA, $n = pq$ for large primes $p, q$. The public key exponent $e$ and private key $d$ satisfy $ed \equiv 1 \pmod{\varphi(n)}$, where $\varphi(n) = (p-1)(q-1)$. Encryption is $c \equiv m^e \pmod{n}$ and decryption is $m \equiv c^d \pmod{n}$.
+
+\item \textbf{Q: What is Carmichael's function?} \\
+Carmichael's function $\lambda(n)$ is the smallest positive integer such that $a^{\lambda(n)} \equiv 1 \pmod{n}$ for all $\gcd(a,n) = 1$. It divides $\varphi(n)$ and is equal to $\varphi(n)$ for prime powers $p^e$ where $p$ is odd or $e \leq 2$. For $n = 2^e$ with $e \geq 3$, $\lambda(n) = 2^{e-2}$.
+
+\item \textbf{Q: Can I use the totient function to find primitive roots?} \\
+A number $g$ is a primitive root modulo $p$ if the order of $g$ modulo $p$ is $p-1 = \varphi(p)$. There are $\varphi(\varphi(p)) = \varphi(p-1)$ primitive roots modulo $p$. To find one, test candidates by checking that $g^{\varphi(p)/q} \not\equiv 1 \pmod{p}$ for each prime factor $q$ of $\varphi(p)$.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Prove that $\sum_{d|n} \varphi(d) = n$ by counting the elements of $\mathbb{Z}/n\mathbb{Z}$ according to their order.
+\end{exercise}
+
+\begin{exercise}
+Show that the probability two random integers are coprime is $6/\pi^2 = 1/\zeta(2)$.
+\end{exercise}
+
+\begin{exercise}
+Implement the Chinese Remainder Theorem using the totient function.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Optimize the totient sieve function \texttt{euler\_totient\_sieve} to run in linear time $O(N)$ using a prime sieve.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\varphi(n)$ is even for all $n \geq 3$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\varphi(n) \geq \sqrt{n/2}$ for all $n \geq 1$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $\varphi(n) = n \prod_{p|n} (1 - 1/p)$ using the multiplicativity property and the formula for prime powers.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement a function to compute $\varphi(n)$ using the prime factorization of $n$. Compare its performance with the sieve approach for $n$ up to $10^6$.
+\end{exercise}
+
+\begin{exercise}
+Show that the number of solutions to $x^k \equiv 1 \pmod{p}$ is $\gcd(k, p-1)$ for prime $p$.
+\end{exercise}
+
+\begin{exercise}
+Prove that if $p$ is an odd prime, then every primitive root modulo $p$ is a quadratic non-residue.
+\end{exercise}
+
+\section{Totient Applications in Cryptography}
+
+\subsection{The RSA Cryptosystem}
+
+The security of the RSA cryptosystem rests on the computational difficulty of factoring large integers and computing $\varphi(n)$ without knowing the prime factorization. The protocol works as follows:
+
+\begin{enumerate}
+    \item \textbf{Key Generation:} Choose two large primes $p$ and $q$, compute $n = pq$ and $\varphi(n) = (p-1)(q-1)$.
+    \item \textbf{Public Key:} Select $e$ such that $\gcd(e, \varphi(n)) = 1$, typically $e = 65537$.
+    \item \textbf{Private Key:} Compute $d = e^{-1} \pmod{\varphi(n)}$.
+\end{enumerate}
+
+Encryption: $c \equiv m^e \pmod{n}$\\
+Decryption: $m \equiv c^d \pmod{n}$
+
+The correctness follows from Euler's theorem: since $ed \equiv 1 \pmod{\varphi(n)}$, we have $ed = 1 + k\varphi(n)$ for some integer $k$, and $m^{ed} \equiv m \pmod{n}$ when $\gcd(m,n) = 1$.
+
+\begin{lstlisting}[caption={RSA encryption and decryption}, label=lst:rsa_crypto]
+from euler import euler_totient
+
+# Small RSA for demonstration
+p, q = 61, 53
+n = p * q
+phi = (p - 1) * (q - 1)  # Euler's totient
+
+e = 17  # Public exponent
+d = pow(e, -1, phi)  # Private exponent
+
+# Encrypt
+m = 42
+c = pow(m, e, n)
+print(f"Encrypted: {c}")
+
+# Decrypt
+m_recovered = pow(c, d, n)
+print(f"Decrypted: {m_recovered}")
+\end{lstlisting}
+
+\subsection{Diffie-Hellman Key Exchange}
+
+The Diffie-Hellman key exchange allows two parties to establish a shared secret over an insecure channel. The security relies on the discrete logarithm problem, which is related to the structure of $\mathbb{Z}_p^*$ whose order is $\varphi(p) = p-1$.
+
+\begin{lstlisting}[caption={Diffie-Hellman key exchange}, label=lst:dh]
+p = 23  # Prime modulus
+g = 5  # Generator
+
+# Alice's secret and public key
+a = 6
+A = pow(g, a, p)
+
+# Bob's secret and public key
+b = 7
+B = pow(g, b, p)
+
+# Shared secret
+s_alice = pow(B, a, p)
+s_bob = pow(A, b, p)
+print(f"Shared secret: {s_alice}")  # Both get the same value
+\end{lstlisting}
+
+\subsection{Carmichael Function}
+
+Carmichael's function $\lambda(n)$ is the smallest positive integer such that $a^{\lambda(n)} \equiv 1 \pmod{n}$ for all $\gcd(a,n) = 1$. It satisfies $\lambda(n) | \varphi(n)$, and for RSA key generation, $\lambda(n) = \text{lcm}(p-1, q-1)$ when $n = pq$.
+
+\begin{theorem}[Carmichael's Theorem]
+For $n = p_1^{e_1} \cdots p_k^{e_k}$, we have:
+\[
+\lambda(n) = \text{lcm}(\lambda(p_1^{e_1}), \ldots, \lambda(p_k^{e_k}))
+\]
+where $\lambda(p^e) = \varphi(p^e)$ for odd primes, and $\lambda(2) = 1$, $\lambda(4) = 2$, $\lambda(2^e) = 2^{e-2}$ for $e \\geq 3$.
+\end{theorem}
+
+\section{Totient in Number Theory}
+
+\subsection{Gauss's Circle Problem}
+
+The totient function appears in counting lattice points visible from the origin. The number of visible lattice points in the first quadrant within a circle of radius $R$ is asymptotically $\frac{3}{\pi^2} R^2$.
+
+\subsection{Reduced Residue Systems}
+
+A \textbf{reduced residue system modulo $n$} is a set of $\varphi(n)$ integers that are each coprime to $n$ and pairwise incongruent modulo $n$. For example, $\\{1, 3, 7, 9\\}$ is a reduced residue system modulo $10$.
+
+\begin{theorem}
+The product of all elements in a reduced residue system modulo $n$ is congruent to:
+\[
+\begin{cases}
+-1 \pmod{n} & \text{if } n = 4, p^k, \text{ or } 2p^k \text{ for odd prime } p \\
+1 \pmod{n} & \text{otherwise}
+\end{cases}
+\]
+This generalizes Wilson's theorem.
+\end{theorem}
+
+\subsection{Multiplicative Order}
+
+The \textbf{multiplicative order} of $a$ modulo $n$ is the smallest positive integer $k$ such that $a^k \equiv 1 \pmod{n}$. By Lagrange's theorem applied to the group $(\mathbb{Z}/n\mathbb{Z})^\times$, the order always divides $\varphi(n)$.
+
+\begin{lstlisting}[caption={Computing multiplicative order}, label=lst:order]
+from euler import euler_totient
+import math
+
+def multiplicative_order(a, n):
+    """Find smallest k such that a^k \equiv 1 (mod n)"""
+    if math.gcd(a, n) != 1:
+        return None
+    phi = euler_totient(n)
+    # Check divisors of \varphi(n)
+    for d in sorted([k for k in range(1, phi + 1) if phi % k == 0]):
+        if pow(a, d, n) == 1:
+            return d
+    return phi
+
+print(f"Order of 2 mod 7: {multiplicative_order(2, 7)}")  # 3
+print(f"Order of 3 mod 7: {multiplicative_order(3, 7)}")  # 6 (primitive root)
+\end{lstlisting}
+
+\section{Sums and Averages}
+
+\subsection{Asymptotic Behavior}
+
+The average order of $\varphi(n)$ satisfies:
+\[
+\sum_{n \leq x} \varphi(n) = \frac{3x^2}{\pi^2} + O(x \\log x)
+\]
+
+This follows from the identity $\sum_{d|n} \varphi(d) = n$ and properties of the Riemann zeta function.
+
+\subsection{Mean Value}
+
+The ratio $\varphi(n)/n$ has average value $6/\pi^2$ over large ranges, reflecting the probability that two random integers are coprime.
+
+\begin{lstlisting}[caption={Average totient values}, label=lst:avg_totient]
+from euler import euler_totient_sieve
+import math
+
+N = 1000
+phi = euler_totient_sieve(N)
+avg_ratio = sum(phi[n]/n for n in range(1, N+1)) / N
+print(f"Average \varphi(n)/n for n \leq {N}: {avg_ratio:.4f}")
+print(f"Theoretical value 6/\pi^2: {6/math.pi**2:.4f}")
+\end{lstlisting}
+
+\section{Exercises}
+
+\begin{exercise}
+Prove Gauss's generalization of Wilson's theorem: the product of elements in a reduced residue system modulo $n$ is $-1$ if $n = 4, p^k$, or $2p^k$, and $1$ otherwise.
+\end{exercise}
+
+\begin{exercise}
+Show that the multiplicative order of $a$ modulo $n$ divides $\varphi(n)$ for all $\gcd(a,n) = 1$.
+\end{exercise}
+
+\begin{exercise}
+Compute $\lambda(n)$ for $n = 15, 24, 35$ and verify that $\lambda(n) | \varphi(n)$.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement a function to compute the Carmichael function $\lambda(n)$ using the prime factorization. Test it for $n \leq 100$.
+\end{exercise}
+
+\begin{exercise}
+Prove that if $p$ is an odd prime, then the number of primitive roots modulo $p$ is $\varphi(p-1)$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\varphi(n) \leq n - \\sqrt{n}$ for all composite $n > 1$.
+\end{exercise}
+
+\begin{exercise}
+Compute the sum $\sum_{n=1}^{100} \varphi(n)$ and verify the asymptotic formula $\frac{3 \\cdot 100^2}{\pi^2} \\approx 303.96$.
+\end{exercise}
+
+\begin{exercise}
+Prove that the number of irreducible polynomials of degree $n$ over $\mathbb{F}_p$ is $\frac{1}{n} \sum_{d|n} \\mu(d) p^{n/d}$, where $\\mu$ is the Moebius function.
+\end{exercise}

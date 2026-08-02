@@ -1,0 +1,23 @@
+% Solutions and Hints for Selected Exercises
+% appendix_solutions.tex
+
+\section{Solutions and Hints for Selected Exercises}
+
+\subsection{Chapter 1: Euler's Totient Function}
+\begin{description}
+    \item[Exercise 1 (Sum of Totients):] Group the integers $1 \le k \le n$ by $d = \gcd(k, n)$. For each divisor $d$ of $n$, the number of such $k$ is exactly $\varphi(n/d)$. Summing over all divisors $d$ yields $\sum_{d|n} \varphi(n/d) = n$. Since summing over $d|n$ is symmetric to summing over $(n/d)|n$, this is equivalent to $\sum_{d|n} \varphi(d) = n$.
+    
+    \item[Exercise 3 (Chinese Remainder Theorem):] The solution is unique modulo $M = m_1 m_2 \cdots m_r$. Use modular inverses computed via Euler's theorem: $a^{\varphi(n)-1} \equiv a^{-1} \pmod{n}$.
+    
+    \item[Exercise 4 (Computational):] A linear totient sieve can be implemented by keeping track of the smallest prime factor $p$ for each number $i$. If $i$ is prime, $\varphi(i) = i - 1$. For composites, use the relation $\varphi(p \cdot i) = p \cdot \varphi(i)$ if $p \mid i$, and $(p-1) \cdot \varphi(i)$ otherwise.
+\end{description}
+
+\subsection{Chapter 2: Prime Numbers}
+\begin{description}
+    \item[Exercise 1 (Reciprocal Sum):] Compare the sum of reciprocals of primes to the divergence of $\log \zeta(s)$ as $s \to 1^+$.
+\end{description}
+
+\subsection{Chapter 3: Perfect and Amicable Numbers}
+\begin{description}
+    \item[Exercise 1 (Even Perfect Numbers):] Use the property that $\sigma(n)$ is multiplicative. For $n = 2^{p-1}(2^p-1)$, show that $\sigma(n) = \sigma(2^{p-1})\sigma(2^p-1) = (2^p-1)(2^p) = 2n$.
+\end{description}

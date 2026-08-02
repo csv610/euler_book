@@ -1,0 +1,385 @@
+% Chapter 19: PDE Solvers
+% ch19_pdes.tex
+
+\chapter{Numerical PDE Solvers: Heat, Wave, and Laplace Equations}
+
+\begin{historical}
+Euler's \emph{Institutiones Calculi Integralis} (1768--1770) laid the groundwork for solving
+differential equations numerically. His finite difference approach to the calculus of variations
+anticipated modern PDE solvers by over a century. Today, the same finite difference stencils
+Euler pioneered are used to simulate heat transfer, acoustic waves, and electrostatic fields.
+
+Euler's key insight was to replace derivatives with difference quotients on a discrete grid.
+For example, the second derivative can be approximated as:
+\[
+\frac{d^2u}{dx^2} \approx \frac{u(x+h) - 2u(x) + u(x-h)}{h^2}
+\]
+This simple idea, combined with Taylor series analysis, leads to the modern theory of
+numerical PDEs.
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Partial derivatives, the heat equation, wave equation, and Laplace equation.
+    Understanding of Taylor series for deriving finite difference approximations.
+    \item \textbf{Programming:} Python lists for 2D grids, nested loops for stencil operations,
+    and basic numerical stability analysis.
+\end{itemize}
+
+\section{Derivation of Finite Difference Stencils}
+
+The finite difference method replaces derivatives with algebraic differences on a grid.
+Consider a uniform grid with spacing $\Delta x$ and $\Delta y$. For a function $u(x,y)$,
+we define grid values $u_{i,j} \approx u(x_i, y_j)$ where $x_i = i\Delta x$ and $y_j = j\Delta y$.
+
+\subsection{Second Derivative Approximation}
+
+Using Taylor series expansions:
+\[
+u_{i+1,j} = u_{i,j} + \Delta x \frac{\partial u}{\partial x}\bigg|_{i,j} + \frac{\Delta x^2}{2} \frac{\partial^2 u}{\partial x^2}\bigg|_{i,j} + \frac{\Delta x^3}{6} \frac{\partial^3 u}{\partial x^3}\bigg|_{i,j} + \cdots
+\]
+\[
+u_{i-1,j} = u_{i,j} - \Delta x \frac{\partial u}{\partial x}\bigg|_{i,j} + \frac{\Delta x^2}{2} \frac{\partial^2 u}{\partial x^2}\bigg|_{i,j} - \frac{\Delta x^3}{6} \frac{\partial^3 u}{\partial x^3}\bigg|_{i,j} + \cdots
+\]
+
+Adding these equations eliminates the odd derivatives:
+\[
+u_{i+1,j} + u_{i-1,j} = 2u_{i,j} + \Delta x^2 \frac{\partial^2 u}{\partial x^2}\bigg|_{i,j} + O(\Delta x^4)
+\]
+
+Therefore:
+\[
+\frac{\partial^2 u}{\partial x^2}\bigg|_{i,j} \approx \frac{u_{i+1,j} - 2u_{i,j} + u_{i-1,j}}{\Delta x^2}
+\]
+
+This is a \textbf{second-order accurate} approximation (error $O(\Delta x^2)$).
+
+\section{The Heat Equation}
+
+The 2D heat equation describes temperature diffusion:
+\[
+\frac{\partial u}{\partial t} = \alpha \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} \right)
+\]
+where $\alpha$ is thermal diffusivity. Euler's finite difference approach replaces derivatives
+with discrete approximations:
+\[
+\frac{u_i^{n+1} - u_i^n}{\Delta t} = \alpha \frac{u_{i+1}^n - 2u_i^n + u_{i-1}^n}{\Delta x^2} + \alpha \frac{u_{i,j+1}^n - 2u_{i,j}^n + u_{i,j-1}^n}{\Delta y^2}
+\]
+
+This yields the explicit FTCS (Forward Time, Central Space) scheme:
+\[
+u_i^{n+1} = u_i^n + r_x(u_{i+1}^n - 2u_i^n + u_{i-1}^n) + r_y(u_{i,j+1}^n - 2u_{i,j}^n + u_{i,j-1}^n)
+\]
+where $r_x = \alpha \Delta t / \Delta x^2$ and $r_y = \alpha \Delta t / \Delta y^2$.
+
+\begin{lstlisting}[language=Python, caption=Explicit heat equation solver]
+from euler import heat_equation_explicit
+import math
+
+# Initial condition: hot spot in center
+nx, ny = 40, 40
+u0 = [[0.0]*nx for _ in range(ny)]
+u0[20][20] = 100.0  # hot spot
+
+# Solve with alpha=0.1, dx=0.1, dt=0.005
+solutions = heat_equation_explicit(
+    u0, alpha=0.1, dx=0.1, dt=0.005,
+    nx=40, ny=40, n_steps=200,
+    bc_left=0.0, bc_right=0.0,
+    bc_top=0.0, bc_bottom=0.0
+)
+
+print(f"Generated {len(solutions)} time steps")
+print(f"Peak temp at t=0: {max(max(r) for r in solutions[0]):.1f}")
+print(f"Peak temp at t=final: {max(max(r) for r in solutions[-1]):.4f}")
+\end{lstlisting}
+
+\textbf{Stability:} The explicit scheme requires $\alpha \Delta t / \Delta x^2 \leq 0.25$ in 2D.
+Violating this produces oscillations that grow exponentially. This condition arises from
+requiring the coefficients in the update formula to be non-negative (maximum principle).
+
+\subsection{Stability Analysis}
+
+For the 1D heat equation, von Neumann analysis gives the amplification factor:
+\[
+G = 1 - 4r \sin^2\left(\frac{k \Delta x}{2}\right)
+\]
+where $r = \alpha \Delta t / \Delta x^2$. Stability requires $|G| \leq 1$, which gives:
+\[
+-1 \leq 1 - 4r \sin^2\left(\frac{k \Delta x}{2}\right) \leq 1
+\]
+The right inequality is always satisfied. The left inequality requires:
+\[
+4r \sin^2\left(\frac{k \Delta x}{2}\right) \leq 2
+\]
+The worst case is $\sin^2(k\Delta x/2) = 1$, giving $r \leq 0.5$ for 1D and $r \leq 0.25$ for 2D.
+
+\section{Crank--Nicolson Method}
+
+The Crank--Nicolson method averages the explicit and implicit schemes, yielding second-order
+accuracy in time and unconditional stability:
+\[
+\frac{u^{n+1} - u^n}{\Delta t} = \frac{\alpha}{2} \left( \nabla^2 u^{n+1} + \nabla^2 u^n \right)
+\]
+
+This requires solving a linear system at each step. The ADI (Alternating Direction Implicit)
+splitting makes this efficient by solving one-dimensional systems alternately.
+
+\begin{lstlisting}[language=Python, caption=Crank-Nicolson solver]
+from euler import heat_equation_crank_nicolson
+
+# Same initial condition as before
+solutions = heat_equation_crank_nicolson(
+    u0, alpha=0.1, dx=0.1, dt=0.01,
+    nx=40, ny=40, n_steps=500
+)
+# No stability restriction! Can use larger dt.
+\end{lstlisting}
+
+\textbf{Complexity:} Each Crank--Nicolson step requires solving a tridiagonal system in each
+direction. Using the Thomas algorithm, this takes $O(N)$ operations per direction, where $N$
+is the number of grid points. For a $200 \times 200$ grid, each time step requires approximately
+$80{,}000$ operations.
+
+\section{The Wave Equation}
+
+The 2D wave equation describes vibrating membranes and sound propagation:
+\[
+\frac{\partial^2 u}{\partial t^2} = c^2 \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} \right)
+\]
+
+Using central differences in both time and space:
+\[
+\frac{u_i^{n+1} - 2u_i^n + u_i^{n-1}}{\Delta t^2} = c^2 \frac{u_{i+1}^n - 2u_i^n + u_{i-1}^n}{\Delta x^2} + c^2 \frac{u_{i,j+1}^n - 2u_{i,j}^n + u_{i,j-1}^n}{\Delta y^2}
+\]
+
+\begin{lstlisting}[language=Python, caption=Wave equation solver]
+from euler import wave_equation_explicit
+import math
+
+# Initial displacement: Gaussian bump
+nx, ny = 60, 60
+u0 = [[math.exp(-((i-30)**2 + (j-30)**2)/200.0)
+       for j in range(nx)] for i in range(ny)]
+v0 = [[0.0]*nx for _ in range(ny)]  # zero initial velocity
+
+solutions = wave_equation_explicit(
+    u0, v0, c=1.0, dx=0.1, dt=0.05,
+    nx=60, ny=60, n_steps=200,
+    bc_left=0.0, bc_right=0.0,
+    bc_top=0.0, bc_bottom=0.0
+)
+\end{lstlisting}
+
+\textbf{CFL condition:} For 2D stability, $c \Delta t / \Delta x \leq 1/\sqrt{2}$.
+This is the Courant--Friedrichs--Lewy condition, which requires that information
+cannot travel more than one grid cell per time step.
+
+\section{Laplace and Poisson Equations}
+
+The Laplace equation $\nabla^2 u = 0$ describes steady-state temperature, electrostatic
+potential, and incompressible flow. The Jacobi iteration updates each interior point to
+the average of its neighbors:
+\[
+u_i^{(k+1)} = \frac{1}{4} \left( u_{i+1}^{(k)} + u_{i-1}^{(k)} + u_{i,j+1}^{(k)} + u_{i,j-1}^{(k)} \right)
+\]
+
+\begin{lstlisting}[language=Python, caption=Laplace equation solver]
+from euler import laplace_equation_jacobi
+
+# 20x20 grid, top edge at temperature 1, rest at 0
+u0 = [[0.0]*20 for _ in range(20)]
+u0[0] = [1.0]*20  # top boundary
+
+sol, iterations = laplace_equation_jacobi(
+    u0, nx=20, ny=20,
+    bc_top=1.0, bc_bottom=0.0,
+    bc_left=0.0, bc_right=0.0,
+    tol=1e-8
+)
+print(f"Converged in {iterations} iterations")
+print(f"Center temperature: {sol[10][10]:.4f}")
+\end{lstlisting}
+
+\subsection{Convergence of Jacobi Iteration}
+
+Jacobi iteration converges if the spectral radius of the iteration matrix is less than 1.
+For the Laplace equation on an $N \times N$ grid, the convergence rate is:
+\[
+\rho \approx 1 - \frac{\pi^2}{2N^2}
+\]
+This means the error reduces by a factor of approximately $1 - O(1/N^2)$ per iteration.
+For $N = 100$, we need roughly $5000$ iterations to reduce the error by a factor of $e$.
+
+\subsection{Gauss--Seidel and SOR}
+
+The \textbf{Gauss--Seidel} method uses newly computed values immediately:
+\[
+u_i^{(k+1)} = \frac{1}{4} \left( u_{i+1}^{(k)} + u_{i-1}^{(k+1)} + u_{i,j+1}^{(k)} + u_{i,j-1}^{(k+1)} \right)
+\]
+
+This typically converges about twice as fast as Jacobi. \textbf{Successive Over-Relaxation (SOR)}
+accelerates convergence further:
+\[
+u_i^{(k+1)} = (1-\omega)u_i^{(k)} + \omega \cdot u_i^{\text{GS}}
+\]
+With optimal $\omega \approx 2/(1 + \pi/N)$, SOR converges orders of magnitude faster than Jacobi.
+
+\section{Von Neumann Stability Analysis}
+
+Von Neumann analysis examines the growth of Fourier modes to determine stability.
+For the explicit heat equation, the amplification factor is:
+\[
+G = 1 - 4r \sin^2\left(\frac{k_x \Delta x}{2}\right) - 4r \sin^2\left(\frac{k_y \Delta y}{2}\right)
+\]
+where $r = \alpha \Delta t / \Delta x^2$. Stability requires $|G| \leq 1$ for all modes.
+
+\begin{lstlisting}[language=Python, caption=Stability analysis]
+from euler import von_neumann_stability
+
+# Check heat equation stability
+info = von_neumann_stability('heat_explicit',
+    alpha=0.1, dx=0.1, dt=0.01)
+print(f"Stable: {info['stable']}")
+print(f"Constraint: {info['constraints'][0]}")
+
+# Check wave equation stability
+info2 = von_neumann_stability('wave_explicit',
+    c=1.0, dx=0.1, dt=0.05)
+print(f"Courant number: {info2.get('courant', 'N/A')}")
+\end{lstlisting}
+
+\section{1D Solvers}
+
+For simpler problems, 1D solvers are faster and easier to analyze:
+
+\begin{lstlisting}[language=Python, caption=1D heat and wave solvers]
+from euler import solve_heat_1d, solve_wave_1d
+import math
+
+# 1D heat: initial parabolic profile, zero BCs
+def u0(x): return x * (1.0 - x)
+x, t, u = solve_heat_1d(u0, alpha=0.1, L=1.0,
+                         T=0.1, nx=100, nt=500)
+print(f"Final peak temperature: {max(u):.4f}")
+
+# 1D wave: plucked string
+def u0w(x): return math.sin(math.pi * x)
+def v0w(x): return 0.0
+x, t, u = solve_wave_1d(u0w, v0w, c=1.0, L=1.0,
+                          T=2.0, nx=100, nt=500)
+print(f"String displacement at t=2: {max(abs(v) for v in u):.4f}")
+\end{lstlisting}
+
+\section{Boundary Conditions}
+
+\textbf{Dirichlet conditions} specify the value of $u$ on the boundary (e.g., fixed temperature).
+\textbf{Neumann conditions} specify the derivative $\partial u/\partial n$ (e.g., insulated boundary
+with zero heat flux).
+
+For Neumann conditions, we introduce \textbf{ghost points} outside the domain and use the
+boundary condition to relate them to interior points. For example, a zero-flux boundary at $x=0$:
+\[
+\frac{u_{1,j} - u_{-1,j}}{2\Delta x} = 0 \implies u_{-1,j} = u_{1,j}
+\]
+
+\section{Modern Relevance}
+
+PDE solvers are the backbone of modern engineering simulation. The heat equation models thermal
+management in electronics, the wave equation governs seismic analysis and acoustic design, and
+Laplace/Poisson solvers are essential for electromagnetic field simulation, structural mechanics,
+and computational fluid dynamics. The finite difference methods Euler pioneered remain the simplest
+and most intuitive approach, taught in every introductory PDE course worldwide.
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why does the explicit heat equation have a stability limit?} \\
+The explicit scheme updates each point using only the current values of its neighbors.
+If $\Delta t$ is too large, errors amplify faster than diffusion can smooth them. The condition
+$\alpha \Delta t / \Delta x^2 \leq 0.25$ ensures the update is a weighted average (non-negative
+coefficients), preventing oscillations.
+
+\item \textbf{Q: What is the CFL condition?} \\
+The Courant--Friedrichs--Lewy condition states that the numerical domain of dependence must
+contain the physical domain of dependence. For the wave equation, information travels at speed
+$c$, so $\Delta t$ must be small enough that a wave doesn't cross more than one grid cell per
+time step: $c \Delta t / \Delta x \leq 1/\sqrt{2}$ in 2D.
+
+\item \textbf{Q: Why is Crank--Nicolson unconditionally stable?} \\
+Crank--Nicolson averages the forward and backward Euler schemes. The backward Euler part is
+implicit and damps all high-frequency modes. The averaging preserves second-order accuracy while
+inheriting the damping property. Mathematically, the amplification factor is always $\leq 1$
+regardless of $\Delta t$.
+
+\item \textbf{Q: How does Jacobi iteration converge?} \\
+Jacobi iteration is a stationary iterative method that converges if the spectral radius of the
+iteration matrix is less than 1. For the Laplace equation on a rectangular grid, convergence is
+guaranteed but slow: the error reduces by roughly a factor of $1 - O(1/N^2)$ per iteration, where
+$N$ is the number of grid points.
+
+\item \textbf{Q: What is the difference between Dirichlet and Neumann boundary conditions?} \\
+\textbf{Dirichlet} specifies the value of $u$ on the boundary (e.g., fixed temperature).
+\textbf{Neumann} specifies the derivative $\partial u/\partial n$ (e.g., insulated boundary with
+zero heat flux). Our examples use Dirichlet conditions; Neumann conditions require modifying the
+stencil near the boundary.
+
+\item \textbf{Q: Why use Gauss--Seidel or SOR instead of Jacobi?} \\
+Gauss--Seidel uses the most recently computed values immediately, typically converging about
+twice as fast as Jacobi. Successive Over-Relaxation (SOR) accelerates this further by extrapolating:
+$u_{new} = (1-\omega)u_{old} + \omega u_{GS}$. With optimal $\omega \approx 2/(1+\pi/N)$, SOR
+converges orders of magnitude faster.
+
+\item \textbf{Q: What is the method of lines?} \\
+The method of lines discretizes only the spatial derivatives, leaving the time derivative continuous.
+This converts the PDE into a system of ODEs, which can then be solved using standard ODE methods
+(RK4, implicit methods, etc.). It combines the flexibility of ODE solvers with the accuracy of
+spatial discretization.
+\end{itemize}
+
+\begin{exercise}
+Implement the explicit heat equation solver from scratch (without importing) using a 2D list for
+the grid. Verify that $r > 0.25$ produces instability.
+\end{exercise}
+
+\begin{exercise}
+Solve the 1D wave equation with initial condition $u(x,0) = \sin(\pi x)$ and zero boundary
+conditions. Show that after one period $T = 2$, the solution returns to its initial state.
+\end{exercise}
+
+\begin{exercise}
+Use von Neumann analysis to derive the stability condition for the 1D heat equation. Show that
+$r = \alpha \Delta t / \Delta x^2 \leq 0.5$ is required.
+\end{exercise}
+
+\begin{exercise}
+Solve the 2D Laplace equation on a square domain with boundary conditions $u=1$ on the top edge
+and $u=0$ on the other three edges. Compare the convergence rates of Jacobi and Gauss--Seidel.
+\end{exercise}
+
+\begin{exercise}
+Implement the Crank--Nicolson method for the 1D heat equation using the Thomas algorithm for
+tridiagonal systems. Verify second-order accuracy in time by comparing solutions with different
+time step sizes.
+\end{exercise}
+
+\begin{exercise}
+For the wave equation, derive the discrete energy:
+\[
+E^n = \frac{1}{2}\sum_{i,j} \left[\left(\frac{u_{i,j}^{n+1} - u_{i,j}^n}{\Delta t}\right)^2
++ c^2\left(\frac{(u_{i+1,j}^n - u_{i,j}^n)^2}{\Delta x^2} + \frac{(u_{i,j+1}^n - u_{i,j}^n)^2}{\Delta y^2}\right)\right]
+\]
+Show that this energy is conserved (up to roundoff) for the explicit scheme.
+\end{exercise}
+
+\begin{exercise}
+Implement a Neumann boundary condition for the heat equation (insulated boundary).
+Show that the total heat energy is conserved when all boundaries are insulated.
+\end{exercise}
+
+\begin{exercise}
+Compare the convergence rate of Jacobi iteration versus SOR for the Laplace equation
+on a $100 \times 100$ grid. What is the optimal relaxation parameter $\omega$?
+\end{exercise}

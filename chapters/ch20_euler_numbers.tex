@@ -1,0 +1,473 @@
+% Chapter 20: Euler Numbers and Tangent/Secant Expansions
+% ch20_euler_numbers.tex
+
+\chapter{Euler Numbers and Tangent/Secant Expansions}
+
+\begin{historical}
+Euler discovered in 1755 that the Taylor series of $\tan(x)$ and $\sec(x)$ have
+integer coefficients that count alternating permutations. These numbers, now called
+Euler zigzag numbers or Andre permutations, appear throughout combinatorics, analysis,
+and the theory of continued fractions.
+
+Euler's generating function identity:
+\[
+\tan x + \sec x = \sum_{n=0}^{\infty} A_n \frac{x^n}{n!}
+\]
+where $A_n$ is the number of alternating permutations of $\{1, 2, \ldots, n\}$.
+This discovery was part of Euler's broader investigation of trigonometric series
+and their connections to number theory.
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Taylor series, basic combinatorics, understanding of permutations.
+    \item \textbf{Programming:} Python functions, iterative algorithms, factorial computation.
+\end{itemize}
+
+\section{Euler Zigzag Numbers}
+
+The Euler zigzag numbers $A_n$ count the number of alternating (up-down) permutations
+of $\{1, 2, \ldots, n\}$. An alternating permutation satisfies:
+\[
+a_1 < a_2 > a_3 < a_4 > a_5 < \cdots
+\]
+
+Such permutations are also called \textbf{zigzag permutations} or \textbf{Andre permutations}.
+The sequence begins:
+\begin{align*}
+A_0 &= 1 \\
+A_1 &= 1 \\
+A_2 &= 1 \\
+A_3 &= 2 \quad \text{(permutations: 132, 231)} \\
+A_4 &= 5 \quad \text{(permutations: 1324, 1423, 2314, 2413, 3412)} \\
+A_5 &= 16 \\
+A_6 &= 61 \\
+A_7 &= 272 \\
+A_8 &= 1385 \\
+A_9 &= 7936 \\
+A_{10} &= 50521
+\end{align*}
+
+\subsection{Recurrence Relation}
+
+The zigzag numbers satisfy the recurrence:
+\[
+2A_{n+1} = \sum_{k=0}^{n} \binom{n}{k} A_k A_{n-k}
+\]
+This can be proven using the generating function and the fact that $(\tan x + \sec x)' = \sec x (\tan x + \sec x)$.
+
+\begin{lstlisting}[caption={Computing Euler zigzag numbers}, label=lst:euler_zigzag]
+from euler import euler_number_zigzag, euler_secant_numbers
+
+print("Euler zigzag numbers A_n:")
+for n in range(12):
+    print(f"  A_{n} = {euler_number_zigzag(n)}")
+
+print("\nEuler secant numbers E_{2n}:")
+print(f"  {euler_secant_numbers(8)}")
+\end{lstlisting}
+
+\section{The Generating Function}
+
+Euler's key discovery was the generating function:
+\[
+\tan x + \sec x = \sum_{n=0}^{\infty} A_n \frac{x^n}{n!}
+\]
+
+Separating even and odd powers gives:
+\[
+\sec x = \sum_{n=0}^{\infty} A_{2n} \frac{x^{2n}}{(2n)!} = 1 + \frac{x^2}{2} + \frac{5x^4}{24} + \frac{61x^6}{720} + \cdots
+\]
+\[
+\tan x = \sum_{n=0}^{\infty} A_{2n+1} \frac{x^{2n+1}}{(2n+1)!} = x + \frac{x^3}{6} + \frac{x^5}{20} + \frac{61x^7}{5040} + \cdots
+\]
+
+\subsection{Connection to Bernoulli Numbers}
+
+The coefficients of $\tan x$ can also be expressed in terms of Bernoulli numbers:
+\[
+\tan x = \sum_{n=1}^{\infty} \frac{(-1)^{n-1} 2^{2n}(2^{2n}-1) B_{2n}}{(2n)!} x^{2n-1}
+\]
+This shows the deep connection between Euler numbers and Bernoulli numbers, both of
+which arise in the study of trigonometric functions.
+
+\subsection{Classical Euler Numbers}
+
+The classical Euler numbers $E_n$ are the even-indexed zigzag numbers:
+\[
+E_0 = 1, \quad E_2 = 1, \quad E_4 = 5, \quad E_6 = 61, \quad E_8 = 1385, \quad \ldots
+\]
+By convention, $E_{2n+1} = 0$ for all $n \geq 0$. These are the coefficients in the
+Taylor expansion of $\sec x$:
+\[
+\sec x = \sum_{n=0}^{\infty} \frac{E_{2n}}{(2n)!} x^{2n}
+\]
+
+\begin{lstlisting}[caption={Taylor series for tan(x) and sec(x)}, label=lst:taylor_tan_sec]
+from euler import tangent_taylor, secant_taylor
+import math
+
+x = 0.5
+print(f"x = {x}")
+print(f"tan({x}) = {math.tan(x):.12f}")
+for terms in [3, 5, 7, 10]:
+    approx = tangent_taylor(x, terms)
+    print(f"  [{terms} terms] = {approx:.12f}  (error: {abs(math.tan(x) - approx):.2e})")
+
+print(f"\nsec({x}) = {1/math.cos(x):.12f}")
+for terms in [3, 5, 7, 10]:
+    approx = secant_taylor(x, terms)
+    print(f"  [{terms} terms] = {approx:.12f}  (error: {abs(1/math.cos(x) - approx):.2e})")
+\end{lstlisting}
+
+\section{The Entringer Triangle}
+
+The Entringer triangle provides a recursive way to compute $A_n$.
+Entry $E(n,k)$ counts alternating permutations of $\{1, \ldots, n+1\}$
+starting with $k+1$ and going down first.
+
+The triangle is constructed as follows:
+\begin{itemize}
+    \item Row 0: $E(0,0) = 1$
+    \item Row $n$: $E(n,k) = E(n,k-1) + E(n-1,n-k)$ for $k = 1, \ldots, n$
+\end{itemize}
+
+The leftmost entry of each row gives $A_n = E(n,0)$.
+
+\begin{lstlisting}[caption={The Entringer triangle}, label=lst:entringer]
+from euler import entringer_triangle
+
+triangle = entringer_triangle(8)
+for i, row in enumerate(triangle):
+    print(f"Row {i}: {row}")
+\end{lstlisting}
+
+The triangle begins:
+\begin{verbatim}
+Row 0: [1]
+Row 1: [1, 1]
+Row 2: [1, 2, 1]
+Row 3: [1, 3, 5, 4]
+Row 4: [1, 4, 9, 14, 10]
+Row 5: [1, 5, 14, 28, 42, 32]
+\end{verbatim}
+
+\subsection{Computational Complexity}
+
+The Entringer triangle has $O(n^2)$ entries, and each entry requires $O(1)$ work to compute.
+Therefore, computing all zigzag numbers up to $A_n$ takes $O(n^2)$ time and space.
+This is efficient for moderate values of $n$ but becomes impractical for very large $n$.
+
+\section{Asymptotic Behavior}
+
+The zigzag numbers grow very rapidly. Euler discovered the asymptotic formula:
+\[
+A_n \sim 2 \cdot \left(\frac{2}{\pi}\right)^{n+1} \cdot n!
+\]
+This can be derived from the singularity structure of the generating function
+$\tan x + \sec x = \frac{1 + \sin x}{\cos x}$, which has poles at $x = \pm \pi/2, \pm 3\pi/2, \ldots$
+
+\subsection{Verification}
+
+Using Stirling's approximation $n! \sim \sqrt{2\pi n}(n/e)^n$, we can verify the growth rate:
+
+\begin{lstlisting}[caption={Verifying asymptotic growth}, label=lst:asymptotic_growth]
+from euler import euler_number_zigzag
+import math
+
+print("Verifying $A_n \\sim 2\\cdot(2/\\pi)^{n+1}\\cdot n!$:")
+for n in [5, 10, 15, 20]:
+    actual = euler_number_zigzag(n)
+    asymptotic = 2 * (2/math.pi)**(n+1) * math.factorial(n)
+    ratio = actual / asymptotic
+    print(f"  n={n:2d}: A_n={actual:>10d}, ratio={ratio:.6f}")
+\end{lstlisting}
+
+By $A_{20}$, the value exceeds 37 billion, illustrating the extremely rapid growth.
+
+\subsection{Error Terms in the Asymptotic}
+
+A more precise asymptotic expansion includes correction terms:
+\[
+A_n = 2 \cdot \left(\frac{2}{\pi}\right)^{n+1} \cdot n! \left(1 - \frac{4}{\pi^2 n} + O\left(\frac{1}{n^2}\right)\right)
+\]
+
+\begin{lstlisting}[caption={Refined asymptotic verification}, label=lst:refined_asymptotic]
+from euler import euler_number_zigzag
+import math
+
+print("Refined asymptotic verification:")
+for n in [10, 20, 30, 40, 50]:
+    actual = euler_number_zigzag(n)
+    leading = 2 * (2/math.pi)**(n+1) * math.factorial(n)
+    refined = leading * (1 - 4/(math.pi**2 * n))
+    ratio1 = actual / leading
+    ratio2 = actual / refined
+    print(f"  n={n:2d}: leading ratio={ratio1:.8f}, refined ratio={ratio2:.8f}")
+\end{lstlisting}
+
+\section{Combinatorial Interpretations}
+
+\subsection{Down-Up Permutations}
+
+An alternating permutation $a_1, a_2, \ldots, a_n$ satisfies $a_1 < a_2 > a_3 < a_4 > \cdots$
+(up-down) or $a_1 > a_2 < a_3 > a_4 < \cdots$ (down-up). Both types are counted by $A_n$.
+
+\subsection{Descent Sets}
+
+The Euler zigzag numbers count permutations with a specific descent set pattern.
+A \textbf{descent} in a permutation $\sigma$ is a position $i$ where $\sigma(i) > \sigma(i+1)$.
+The number of permutations of $\{1, \ldots, n\}$ with descents at positions $1, 3, 5, \ldots$
+is $A_n$.
+
+\subsection{Secant and Tangent Numbers}
+
+The numbers $E_{2n} = A_{2n}$ are called \textbf{secant numbers} (coefficients of $\sec x$),
+while $A_{2n+1}$ are called \textbf{tangent numbers} (coefficients of $\tan x$).
+Euler showed that these numbers arise naturally in the study of trigonometric integrals.
+
+\section{Euler Numbers and Continued Fractions}
+
+Euler discovered deep connections between Euler numbers and continued fractions. The
+continued fraction expansion of $\tan x$ involves only odd powers of $x$:
+\[
+\tan x = \cfrac{x}{1 - \cfrac{x^2}{3 - \cfrac{x^2}{5 - \cfrac{x^2}{7 - \ddots}}}}
+\]
+Similarly, $\sec x$ has a continued fraction representation:
+\[
+\sec x = \cfrac{1}{1 - \cfrac{x^2}{2 - \cfrac{x^2}{2 - \cfrac{x^2}{2 - \ddots}}}}
+\]
+
+\subsection{Lambert's Continued Fraction}
+
+Johann Heinrich Lambert (1768) proved that $\tan r$ is irrational for rational $r \neq 0$
+using continued fractions. This immediately implies $\pi$ is irrational since $\tan(\pi/4) = 1$.
+
+\begin{lstlisting}[caption={Continued fraction for tan(x)}, label=lst:tan_cf]
+from euler import continued_fraction_tan
+
+# Compute convergents of tan(1)
+convergents = continued_fraction_tan(1, 10)
+print("Convergents of tan(1):")
+for i, (p, q) in enumerate(convergents):
+    print(f"  [{i}] = {p}/{q} = {p/q:.10f}")
+print(f"Actual tan(1) = {math.tan(1):.10f}")
+\end{lstlisting}
+
+\section{The Andr\'{e} Permutations Connection}
+
+\subsection{Zigzag to Alternating Bijection}
+
+There is a classical bijection between alternating permutations and certain lattice paths.
+The Andr\'{e} permutation of type A counts up-down permutations, while type B counts
+symmetric alternating permutations.
+
+\subsection{Secant-Tangent Numbers in Physics}
+
+The Euler numbers appear in quantum field theory as coefficients in the expansion
+of Feynman diagrams. Specifically, they count the number of ways to pair vertices
+in certain topological configurations.
+
+\section{Extended Combinatorial Applications}
+
+\subsection{Andr\'{e}'s Theorem}
+
+Andr\'{e} (1881) proved that the exponential generating function for alternating permutations
+is $\sec x + \tan x$. This result connects several areas:
+\begin{itemize}
+\item Combinatorics: counting permutations with prescribed ascent/descent patterns
+\item Analysis: Taylor series of trigonometric functions
+\item Geometry: volumes of certain polytopes related to permutohedra
+\end{itemize}
+
+\subsection{Generalized Euler Numbers}
+
+The Euler numbers can be generalized to the \textbf{Andre numbers} $A(n,k)$, which count
+alternating permutations of $\{1, \ldots, n\}$ with exactly $k$ rises. These satisfy
+a refinement of the basic recurrence and form a triangular array.
+
+\section{Computational Applications}
+
+\subsection{Random Permutation Statistics}
+
+For a random permutation of $n$ elements, the expected number of alternating
+subsequences grows as $\frac{4}{\pi^2} n$. This follows from the asymptotic
+behavior of Euler numbers.
+
+\subsection{Sorting and Search Algorithms}
+
+The analysis of certain sorting algorithms (like quicksort variants) involves
+Euler numbers through the study of permutation patterns. The average number
+of comparisons in Shellsort with specific gap sequences relates to zigzag statistics.
+
+\begin{lstlisting}[caption={Analyzing random permutations}, label=lst:rand_perm]
+from euler import euler_number_zigzag
+import random
+
+def count_alternations(perm):
+    count = 0
+    for i in range(len(perm)-1):
+        if (i % 2 == 0 and perm[i] < perm[i+1]) or \
+           (i % 2 == 1 and perm[i] > perm[i+1]):
+            count += 1
+    return count
+
+# Expected number of alternations in random permutation
+n = 10
+perms = [random.sample(range(1, n+1), n) for _ in range(10000)]
+avg_alts = sum(count_alternations(p) for p in perms) / len(perms)
+print(f"Average alternations: {avg_alts:.3f}")
+print(f"Expected: {n * 2/math.pi:.3f}")
+\end{lstlisting}
+
+\subsection{Euler Numbers in Series Expansions}
+
+Euler numbers appear in many classical series expansions beyond trigonometric functions:
+
+\begin{lstlisting}[caption={Euler numbers in series}, label=lst:euler_series]
+from euler import euler_secant_numbers
+import math
+
+# Verify sec(x) series coefficients
+print("Secant series coefficients:")
+for n in range(6):
+    E_2n = euler_secant_numbers(n)
+    coeff = E_2n / math.factorial(2*n)
+    print(f"  x^{2*n}/{(2*n)}! = {E_2n}/{math.factorial(2*n)} = {coeff:.6f}")
+
+# Verify tan(x) series coefficients  
+print("\nTangent series coefficients:")
+for n in range(5):
+    A_2n1 = euler_number_zigzag(2*n+1)
+    coeff = A_2n1 / math.factorial(2*n+1)
+    print(f"  x^{2*n+1}/{(2*n+1)}! = {A_2n1}/{math.factorial(2*n+1)} = {coeff:.6f}")
+\end{lstlisting}
+
+\section{Historical Development}
+
+\subsection{Euler's Original Discoveries}
+
+Euler first investigated these numbers in his 1755 work ``Institutiones calculi differentialis.''
+He derived the series for $\tan x$ and $\sec x$ and recognized the combinatorial significance.
+
+\subsection{Andr\'{e}'s Contribution}
+
+D\'{e}sir\'{e} Andr\'{e} (1881) provided the first rigorous combinatorial interpretation,
+proving that $A_n$ counts alternating permutations. This established the connection
+between analysis and combinatorics.
+
+\subsection{Modern Generalizations}
+
+Modern research has generalized Euler numbers to:
+\begin{itemize}
+\item \textbf{Secant and tangent numbers of higher order}
+\item \textbf{Eulerian numbers} (different concept, counting permutations by descents)
+\item \textbf{q-analogues} using combinatorial statistics
+\end{itemize}
+
+\section{Modern Relevance}
+
+Euler numbers appear in diverse areas: the coefficients of tangent and secant
+functions in Fourier analysis, the enumeration of alternating permutations in
+combinatorics, the study of zigzag algebras in representation theory, and in
+the analysis of sorting algorithms (specifically, the expected number of
+alternating subsequences). The Entringer triangle is also connected to the
+Andr\'{e} permutations and the theory of descent sets in symmetric groups.
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: What are alternating permutations?} \\
+An alternating permutation $a_1, a_2, \ldots, a_n$ satisfies $a_1 < a_2 > a_3 < a_4 > \cdots$
+(up-down) or $a_1 > a_2 < a_3 > a_4 < \cdots$ (down-up). Both types are counted by $A_n$.
+
+\item \textbf{Q: Why are odd-indexed classical Euler numbers zero?} \\
+The classical Euler numbers $E_n$ are defined as the coefficients of $\sec x$. Since $\sec x$ is an even function, only even powers appear. Thus $E_{2n+1} = 0$.
+
+\item \textbf{Q: How fast do Euler numbers grow?} \\
+$A_n$ grows very rapidly: $A_n \sim 2 \cdot (2/\pi)^{n+1} \cdot n!$. By $A_{20}$, the value exceeds 37 billion.
+
+\item \textbf{Q: What is the connection to Bernoulli numbers?} \\
+Both sequences appear in trigonometric Taylor series. $\tan x$ coefficients relate to Bernoulli numbers, while $\sec x$ coefficients are the Euler numbers. They are both "zigzag" in nature.
+
+\item \textbf{Q: Can the Entringer triangle be used for computation?} \\
+Yes. Each row is built by cumulative sums of the previous row, alternating direction. This is known as the Seidel construction and allows efficient computation of all $A_n$ up to a given bound.
+
+\item \textbf{Q: What is the relationship between Euler numbers and the secant/tangent functions?} \\
+The Taylor series coefficients of $\sec x$ are the Euler (secant) numbers $E_{2n}/(2n)!$, while the coefficients of $\tan x$ are the tangent numbers $A_{2n+1}/(2n+1)!$.
+
+\item \textbf{Q: How are Euler numbers used in practical applications?} \\
+Euler numbers appear in the analysis of algorithms (expected number of alternations in random permutations), in quantum field theory (Feynman diagram combinatorics), and in the study of special functions.
+
+\item \textbf{Q: What is the relation to combinatorial geometry?} \\
+The Euler numbers count the number of regions in certain hyperplane arrangements and relate to volumes of permutahedra and associahedra.
+
+\item \textbf{Q: What is the difference between Euler zigzag numbers and classical Euler numbers?} \\
+The zigzag numbers $A_n$ include both even and odd indices. The classical Euler numbers $E_n$ are defined as $A_{2n}$ with $E_{2n+1} = 0$.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Prove that $A_n$ satisfies the recurrence $2A_{n+1} = \sum_{k=0}^{n} \binom{n}{k} A_k A_{n-k}$ for $n \geq 1$.
+\end{exercise}
+
+\begin{exercise}
+Compute the first 12 Euler zigzag numbers and verify them by enumerating all alternating permutations of $\{1, \ldots, 6\}$.
+\end{exercise}
+
+\begin{exercise}
+Use the Taylor series for $\tan x$ to approximate $\tan(0.1)$ to 10 decimal places. How many terms are needed?
+\end{exercise}
+
+\begin{exercise}
+Show that the Entringer triangle satisfies the recurrence $E(n,k) = E(n,k-1) + E(n-1,n-k)$ with $E(n,0) = E(n-1,0)$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $A_n = \sum_{k=0}^{n-1} \binom{n-1}{k} A_k A_{n-1-k}$ for $n \geq 2$ by considering the position of the largest element in an alternating permutation.
+\end{exercise}
+
+\begin{exercise}
+Using the generating function $\tan x + \sec x$, derive the first 8 terms of the Taylor series for $\sec x$ and $\tan x$ by hand.
+\end{exercise}
+
+\begin{exercise}
+Show that the number of down-up permutations of $\{1, \ldots, n\}$ equals the number of up-down permutations.
+(Hint: Consider the complement permutation $\sigma'(i) = n+1 - \sigma(i)$.)
+\end{exercise}
+
+\begin{exercise}
+Verify numerically that $A_n \sim 2 \cdot (2/\pi)^{n+1} \cdot n!$ for $n = 10, 15, 20$.
+Compute the ratio $A_n / [2 \cdot (2/\pi)^{n+1} \cdot n!]$ and show it approaches 1.
+\end{exercise}
+
+\begin{exercise}
+The secant numbers $E_{2n}$ satisfy the recurrence $E_{2n} = \sum_{k=0}^{n-1} \binom{2n}{2k} E_{2k} E_{2n-2k-2}$ for $n \geq 1$ with $E_0 = 1$. Prove this recurrence.
+\end{exercise}
+
+\begin{exercise}
+Show that $\int_0^{\pi/2} \sec^2 x \, dx$ diverges while $\int_0^{\pi/4} \sec^2 x \, dx = \sqrt{2} - 1$. Use this to explain why the Taylor series for $\tan x$ has radius of convergence $\pi/2$.
+\end{exercise}
+
+\begin{exercise}
+Using the generating function, prove that $\sum_{n=0}^{\infty} A_n \frac{x^n}{n!} = \tan x + \sec x$ by showing that $y' = 1 + y^2$ where $y = \tan x + \sec x$.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement the Entringer triangle construction and use it to compute $A_n$ for $n$ up to 20. Compare results with the recursive formula.
+\end{exercise}
+
+\begin{exercise}
+Prove that the continued fraction coefficients of $\tan x$ are related to Euler numbers by the recurrence relation derived from the generating function.
+\end{exercise}
+
+\begin{exercise}
+Show that $\sec x + \tan x = \tan\left(\frac{\pi}{4} + \frac{x}{2}\right) \sec x$. Use this to derive alternative series expansions.
+\end{exercise}
+
+\begin{exercise}
+Using the relation between Euler numbers and Bernoulli numbers, express $A_{2n+1}$ in terms of $B_{2n}$ and verify for small $n$.
+\end{exercise}

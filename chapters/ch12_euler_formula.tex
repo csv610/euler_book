@@ -1,0 +1,390 @@
+% Chapter 12: Complex Analysis with Euler's Formula
+% ch12_euler_formula.tex
+
+\chapter{Complex Analysis: Euler's Formula Extended}
+
+\begin{historical}
+Euler's formula $e^{ix} = \cos x + i \sin x$ opened the door to complex analysis.
+This chapter extends the formula to complex exponents, logarithms, and powers,
+forming the foundation of modern complex function theory that Riemann, Cauchy, and
+Weierstrass would develop further in the 19th century.
+\end{historical}
+
+\section{Complex Exponentiation}
+
+Euler's formula extends naturally to complex exponents. For $z = a + ib$:
+\[
+e^{a+ib} = e^a e^{ib} = e^a (\cos b + i \sin b)
+\]
+
+The modulus and argument are:
+\[
+|e^z| = e^a, \quad \arg(e^z) = b \pmod{2\pi}
+\]
+
+\subsection{Properties of Complex Exponential}
+
+\begin{theorem}
+The complex exponential function satisfies:
+\begin{enumerate}
+\item $e^{z_1 + z_2} = e^{z_1} \cdot e^{z_2}$ for all $z_1, z_2 \in \mathbb{C}$
+\item $e^0 = 1$
+\item $e^z \neq 0$ for all $z \in \mathbb{C}$
+\item $e^{z + 2\pi i} = e^z$ (periodicity with period $2\pi i$)
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Property 1 follows from the series definition or from the addition formula for exponentials.
+Property 2 is immediate. Property 3 follows since $|e^z| = e^a > 0$.
+Property 4 follows from Euler's formula: $e^{2\pi i} = \cos(2\pi) + i\sin(2\pi) = 1$.
+\end{proof}
+
+\subsection{Taylor Series for Complex Exponential}
+
+\[
+e^z = \sum_{n=0}^{\infty} \frac{z^n}{n!} = 1 + z + \frac{z^2}{2!} + \frac{z^3}{3!} + \cdots
+\]
+
+This series converges absolutely for all $z \in \mathbb{C}$.
+
+\begin{lstlisting}[caption={Complex exponential}, label=lst:complex_exp]
+from euler import complex_exponential, complex_logarithm, complex_power
+import math
+
+z = 1 + 2j
+print(f"Complex exponential: e^{z} = {complex_exponential(z)}")
+print(f"  |e^z| = {abs(complex_exponential(z)):.6f}")
+
+w = 3 + 4j
+log_w = complex_logarithm(w)
+print(f"Logarithm: log({w}) = {log_w}")
+
+base = 2 + 3j
+exp = 1 + 1j
+print(f"Complex power: ({base})^({exp}) = {complex_power(base, exp)}")
+\end{lstlisting}
+
+\section{The Complex Logarithm}
+
+The complex logarithm is multi-valued:
+\[
+\log z = \ln|z| + i(\arg z + 2\pi k), \quad k \in \mathbb{Z}
+\]
+
+The \textbf{principal branch} restricts $\arg z \in (-\pi, \pi]$, denoted $\operatorname{Log} z$.
+This makes $\log$ single-valued but discontinuous along the negative real axis (the branch cut).
+
+\begin{theorem}[Complex Logarithm]
+For $z \neq 0$:
+\[
+\operatorname{Log} z = \ln|z| + i \operatorname{Arg}(z)
+\]
+where $\operatorname{Arg}(z) \in (-\pi, \pi]$ is the principal argument.
+\end{theorem}
+
+\subsection{Branch Cuts}
+
+\begin{itemize}
+\item \textbf{Principal branch cut:} Negative real axis $(-\infty, 0]$
+\item \textbf{Other branches:} Can choose different cuts, e.g., positive real axis
+\item \textbf{Branch points:} $z = 0$ and $z = \infty$ are branch points of $\log z$
+\end{itemize}
+
+\begin{lstlisting}[caption={Complex logarithm}, label=lst:complex_log]
+from euler import complex_logarithm
+import math, cmath
+
+# Principal branch
+for z in [1, -1, 1j, -1j, 1+1j, -1+1j, -1-1j, 1-1j]:
+    log_z = complex_logarithm(z)
+    expected = cmath.log(z)
+    print(f"log({z:6.2f}) = {log_z.real:.4f} + {log_z.imag:.4f}i")
+
+# Verify: exp(Log(z)) = z
+print("\nVerification: e^(Log(z)) = z")
+for z in [1, 2+3j, -1+1j]:
+    result = complex_exponential(complex_logarithm(z))
+    print(f"  e^({z}) = {result.real:.6f} + {result.imag:.6f}i")
+\end{lstlisting}
+
+\subsection{Logarithm Properties}
+
+\begin{theorem}
+For the principal branch:
+\begin{enumerate}
+\item $\operatorname{Log}(z_1 z_2) = \operatorname{Log} z_1 + \operatorname{Log} z_2 + 2\pi i k$ for some $k \in \{-1, 0, 1\}$
+\item $\operatorname{Log}(z^n) = n \operatorname{Log} z + 2\pi i k$ for $k \in \{-n+1, \ldots, n-1\}$
+\item $\frac{d}{dz} \operatorname{Log} z = \frac{1}{z}$ for $z \notin (-\infty, 0]$
+\end{enumerate}
+\end{theorem}
+
+\begin{example}
+$\operatorname{Log}((-1)(-1)) = \operatorname{Log}(1) = 0$, but $\operatorname{Log}(-1) + \operatorname{Log}(-1) = i\pi + i\pi = 2\pi i$.
+The difference is $2\pi i$, showing the logarithm is not a true homomorphism.
+\end{example}
+
+\section{Complex Powers}
+
+For complex $z$ and $w$, define:
+\[
+z^w = e^{w \log z}
+\]
+
+Using the principal branch:
+\[
+z^w = \exp(w (\ln|z| + i \operatorname{Arg} z))
+\]
+
+\begin{theorem}[Complex Power]
+For $z \neq 0$ and any complex $w$:
+\[
+z^w = e^{w \operatorname{Log} z} = \exp(w(\ln|z| + i \operatorname{Arg} z))
+\]
+\end{theorem}
+
+\subsection{Multivalued Nature of Complex Powers}
+
+Since $\log z$ is multi-valued, $z^w$ is also multi-valued:
+\[
+z^w = \exp(w(\ln|z| + i(\operatorname{Arg} z + 2\pi k))), \quad k \in \mathbb{Z}
+\]
+
+\begin{example}[Special Cases]
+\begin{itemize}
+\item $i^i = e^{i \cdot i\pi/2} = e^{-\pi/2} \approx 0.2079$ (principal value)
+\item $(-1)^{1/2} = \pm i$
+\item $0^0$ is indeterminate in complex analysis
+\end{itemize}
+\end{example}
+
+\section{Euler's Formula for Hyperbolic Functions}
+
+Euler's formula connects to hyperbolic functions:
+\[
+\cosh x = \frac{e^x + e^{-x}}{2}, \quad \sinh x = \frac{e^x - e^{-x}}{2}
+\]
+
+Setting $x \to ix$:
+\[
+\cos x = \cosh(ix), \quad \sin x = -i \sinh(ix)
+\]
+
+\subsection{Euler's Formulas for Hyperbolic Functions}
+
+\begin{theorem}
+For any complex $z$:
+\[
+e^z = \cosh z + \sinh z, \quad e^{-z} = \cosh z - \sinh z
+\]
+\[
+\cosh z = \frac{e^z + e^{-z}}{2}, \quad \sinh z = \frac{e^z - e^{-z}}{2}
+\]
+\end{theorem}
+
+\begin{lstlisting}[caption={Hyperbolic identities}, label=lst:hyperbolic]
+from euler import hyperbolic_cos, hyperbolic_sin
+import math, cmath
+
+# Verify: cos(ix) = cosh(x)
+for x in [0.5, 1.0, 2.0]:
+    cos_ix = cmath.cos(1j * x)
+    cosh_x = hyperbolic_cos(x)
+    print(f"cos(i{x:.1f}) = {cos_ix.real:.6f} + {cos_ix.imag:.6f}i  (cosh({x:.1f}) = {cosh_x:.6f})")
+\end{lstlisting}
+
+\subsection{Trigonometric-Hyperbolic Identities}
+
+\begin{theorem}
+\begin{align*}
+\cos(ix) &= \cosh x \\
+\sin(ix) &= i\sinh x \\
+\cos(x + iy) &= \cos x \cosh y - i\sin x \sinh y \\
+\sin(x + iy) &= \sin x \cosh y + i\cos x \sinh y
+\end{align*}
+\end{theorem}
+
+\section{Branch Cuts and Multi-Valued Functions}
+
+The complex logarithm and power functions are multi-valued. When working with them,
+we must choose a branch. The principal branch cuts along the negative real axis
+are the standard convention.
+
+\begin{itemize}
+\item \textbf{Logarithm branch cut:} Negative real axis, $(-\infty, 0]$
+\item \textbf{Power branch cut:} Depends on the branch of the logarithm used
+\item \textbf{Continuity:} Functions are continuous on $\mathbb{C} \setminus \text{branch cut}$
+\end{itemize}
+
+\subsection{Riemann Surfaces}
+
+\begin{definition}
+A \textbf{Riemann surface} for a multi-valued function is a connected complex manifold
+on which the function becomes single-valued and holomorphic.
+\end{definition}
+
+\begin{example}
+The Riemann surface for $\log z$ is an infinite spiral covering the punctured plane $\mathbb{C} \setminus \{0\}$.
+Each turn around the origin ascends to a different sheet.
+\end{example}
+
+\section{Euler's Formula and Differential Equations}
+
+Euler's formula solves the differential equation $y' = iy$ with $y(0) = 1$:
+\[
+y(x) = e^{ix} = \cos x + i \sin x
+\]
+
+More generally, $y' = \lambda y$ has solution $y = e^{\lambda x}$.
+For $\lambda = a + ib$: $y = e^{ax}(\cos bx + i \sin bx)$.
+
+\subsection{Linear ODEs with Complex Coefficients}
+
+\begin{theorem}
+The general solution of $y'' + \omega^2 y = 0$ is:
+\[
+y(t) = A e^{i\omega t} + B e^{-i\omega t} = C_1 \cos(\omega t) + C_2 \sin(\omega t)
+\]
+\end{theorem}
+
+\section{Analytic Functions}
+
+\subsection{Cauchy-Riemann Equations}
+
+\begin{theorem}[Cauchy-Riemann Equations]
+A function $f(z) = u(x,y) + iv(x,y)$ is holomorphic at $z_0$ if and only if:
+\[
+\frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \quad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}
+\]
+at $z_0$, and the partial derivatives are continuous.
+\end{theorem}
+
+\subsection{Holomorphic Functions}
+
+\begin{definition}
+A function is \textbf{holomorphic} on an open set $U$ if it is complex differentiable at every point in $U$.
+\end{definition}
+
+\begin{theorem}
+The following functions are holomorphic on their domains:
+\begin{itemize}
+\item Polynomials: $\mathbb{C} \to \mathbb{C}$
+\item Rational functions: $\mathbb{C} \setminus \{\text{poles}\}$
+\item Exponential: $e^z$: $\mathbb{C} \to \mathbb{C} \setminus \{0\}$
+\item Logarithm: $\operatorname{Log} z$: $\mathbb{C} \setminus (-\infty, 0]$
+\end{itemize}
+\end{theorem}
+
+\section{Applications in Signal Processing}
+
+Euler's formula is fundamental to Fourier analysis:
+\[
+f(t) = \sum_{n=-\infty}^{\infty} c_n e^{in\omega_0 t}
+\]
+
+Each term $c_n e^{in\omega_0 t}$ represents a rotating vector (phasor) in the complex plane.
+This representation is essential in:
+\begin{itemize}
+\item \textbf{Digital signal processing:} FFT algorithms decompose signals into complex exponentials
+\item \textbf{Communications:} Modulation schemes (AM, FM, QAM) use complex carriers
+\item \textbf{Control theory:} Transfer functions use $e^{st}$ for stability analysis
+\end{itemize}
+
+\subsection{Laplace Transform}
+
+The Laplace transform uses $e^{-st}$ with $s = \sigma + i\omega$:
+\[
+\mathcal{L}\{f(t)\} = F(s) = \int_0^{\infty} f(t) e^{-st} dt
+\]
+
+\section{Computational Complexity}
+
+\subsection{Complex Exponential}
+Computing $e^{a+ib}$:
+\begin{itemize}
+\item Time: $O(1)$ for fixed precision (using CORDIC or Taylor series with reduction)
+\item Memory: $O(1)$
+\item Accuracy: Requires careful argument reduction for large $|b|$
+\end{itemize}
+
+\subsection{Complex Logarithm}
+Computing $\operatorname{Log} z$:
+\begin{itemize}
+\item Time: $O(1)$ (involves one sqrt, one log, and one atan2)
+\item Memory: $O(1)$
+\item Special case: Branch cut requires careful handling for negative reals
+\end{itemize}
+
+\subsection{Complex Power}
+Computing $z^w = e^{w \operatorname{Log} z}$:
+\begin{itemize}
+\item Time: $O(1)$ after computing logarithm
+\item Memory: $O(1)$
+\end{itemize}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: What is the principal branch of the complex logarithm?} \\
+The complex logarithm is multi-valued: $\log z = \ln|z| + i(\arg z + 2\pi k)$. The principal branch restricts $\arg z \in (-\pi, \pi]$, denoted $\operatorname{Log} z$. This makes $\log$ single-valued but discontinuous along the negative real axis (the branch cut).
+
+\item \textbf{Q: How do I compute $z^w$ for complex numbers?} \\
+Define $z^w = e^{w \log z}$. Using the principal branch: $z^w = \exp(w (\ln|z| + i \operatorname{Arg} z))$. Note that complex exponentiation is not commutative: $z^w \neq w^z$ in general, and $(z^a)^b \neq z^{ab}$ due to branch cuts.
+
+\item \textbf{Q: Why does $e^{i\pi} = -1$ and not some other value?} \\
+From Euler's formula: $e^{i\pi} = \cos \pi + i \sin \pi = -1 + 0i = -1$. The cosine and sine values at $\pi$ are determined by the Taylor series definitions, which are consistent with the geometric unit circle interpretation.
+
+\item \textbf{Q: What is the modulus of $e^z$ for complex $z = a + ib$?} \\
+$|e^{a+ib}| = |e^a e^{ib}| = e^a |e^{ib}| = e^a \cdot 1 = e^a$. The imaginary part contributes only to the phase (angle), not the magnitude. This is why $e^{ix}$ always lies on the unit circle.
+
+\item \textbf{Q: How does Euler's formula relate to the exponential map in group theory?} \\
+The map $x \mapsto e^{ix}$ is a group homomorphism from $(\mathbb{R}, +)$ to the circle group $S^1$ (complex numbers of modulus 1). Its kernel is $2\pi\mathbb{Z}$, giving the isomorphism $\mathbb{R}/2\pi\mathbb{Z} \cong S^1$.
+
+\item \textbf{Q: Why is the complex logarithm multi-valued?} \\
+Because $e^z$ is periodic with period $2\pi i$: $e^{z+2\pi i k} = e^z$ for any integer $k$. Therefore, the inverse function must account for all these preimages, giving $\log z = \ln|z| + i(\arg z + 2\pi k)$.
+
+\item \textbf{Q: What is the difference between holomorphic and analytic functions?} \\
+In complex analysis, these are equivalent: a function is holomorphic if and only if it is analytic (can be represented by a convergent power series). This is a fundamental difference from real analysis.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Prove that $|e^{a+ib}| = e^a$ for all real $a, b$.
+\end{exercise}
+
+\begin{exercise}
+Show that $\operatorname{Log}(z_1 z_2) \neq \operatorname{Log} z_1 + \operatorname{Log} z_2$ in general by finding a counterexample.
+\end{exercise}
+
+\begin{exercise}
+Compute $i^i$ using the principal branch and verify it is real.
+\end{exercise}
+
+\begin{exercise}[Proof]
+Prove the hyperbolic identities $\cos(ix) = \cosh x$ and $\sin(ix) = i\sinh x$.
+\end{exercise}
+
+\begin{exercise}
+Solve the differential equation $y' = (1+i)y$ with $y(0) = 1$ using Euler's formula.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement the complex logarithm using the principal branch and verify that $e^{\operatorname{Log} z} = z$ for several test points.
+\end{exercise}
+
+\begin{exercise}
+Show that the Taylor series for $e^z$ converges absolutely for all $z \in \mathbb{C}$.
+\end{exercise}
+
+\begin{exercise}
+Verify the Cauchy-Riemann equations for $f(z) = e^z$ and $f(z) = \log z$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $e^{z_1 + z_2} = e^{z_1} \cdot e^{z_2}$ using the series definition.
+\end{exercise}
+
+\begin{exercise}
+Find all solutions to $e^z = 1$ and explain why there are infinitely many.
+\end{exercise}

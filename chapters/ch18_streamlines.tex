@@ -1,0 +1,588 @@
+% Chapter 18: Streamlines and Euler's Equations for Fluids
+% ch18_streamlines.tex
+
+\chapter{Streamlines and Euler's Equations for Fluids}
+
+\begin{historical}
+In 1755, Euler published \emph{Lezioni di statica dei fluidi}, deriving the equations of motion for an ideal (inviscid) fluid from first principles. He showed that for a fluid with no viscosity, the acceleration of a fluid particle equals the sum of pressure and body forces per unit mass. These \textbf{Euler equations} are the foundation of inviscid fluid dynamics, and the concept of a \textbf{streamline}---a curve everywhere tangent to the velocity field---was Euler's key insight for visualizing and computing fluid flow.
+
+Euler's approach was remarkable for its time: he applied Newton's second law directly to a fluid element, treating the fluid as a continuum rather than a collection of particles. This continuum approach, now called \textbf{Eulerian mechanics}, contrasts with the \textbf{Lagrangian} approach that tracks individual fluid particles. Both perspectives remain fundamental in modern fluid dynamics.
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Vector calculus basics (gradient, divergence), ordinary differential equations, and the concept of a velocity field $\vec{v}(x,y)$.
+    \item \textbf{Programming:} Python functions as first-class objects, list comprehensions, and numerical integration (Euler's method or RK4).
+\end{itemize}
+
+\section{Derivation of Euler's Equations}
+
+Euler's equations follow directly from Newton's second law applied to a fluid element.
+Consider a small fluid element of volume $dV$ and density $\rho$. The forces acting on it are:
+\begin{itemize}
+    \item \textbf{Pressure forces:} $-\nabla p \, dV$ (acting inward, opposite to pressure gradient)
+    \item \textbf{Body forces:} $\rho \vec{g} \, dV$ (e.g., gravity)
+\end{itemize}
+
+The acceleration of the fluid element is given by the material derivative:
+\[
+\frac{D\vec{v}}{Dt} = \frac{\partial \vec{v}}{\partial t} + (\vec{v} \cdot \nabla)\vec{v}
+\]
+
+For steady flow, $\partial \vec{v}/\partial t = 0$, so the acceleration is purely convective.
+Newton's second law gives:
+\[
+\rho \frac{D\vec{v}}{Dt} = -\nabla p + \rho \vec{g}
+\]
+
+This is the \textbf{Euler equation} for inviscid flow. For incompressible flow ($\rho = \text{const}$),
+we can write it in the more familiar form.
+
+\subsection{Component Form}
+
+In two dimensions, with velocity components $u(x,y)$ and $v(x,y)$, the equations become:
+\[
+\rho \left( u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} \right) = -\frac{\partial p}{\partial x} + \rho g_x
+\]
+\[
+\rho \left( u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y} \right) = -\frac{\partial p}{\partial y} + \rho g_y
+\]
+where $u,v$ are velocity components, $p$ is pressure, $\rho$ is density, and $g_x, g_y$ are body forces.
+
+In vector form: $\rho (\vec{v} \cdot \nabla) \vec{v} = -\nabla p + \rho \vec{g}$.
+
+\begin{lstlisting}[language=Python, caption=Euler's steady-flow equations]
+from euler import euler_equations_steady
+
+# Given velocity field (u(x,y), v(x,y))
+def vx(x, y): return 1.0 - x*x + y*y
+def vy(x, y): return -2*x*y
+
+# Compute pressure gradients
+dpdx, dpdy = euler_equations_steady(vx, vy, rho=1.0)
+
+# Evaluate at a point
+p_grad_x = dpdx(0.5, 0.3)
+p_grad_y = dpdy(0.5, 0.3)
+\end{lstlisting}
+
+\section{Streamlines}
+
+A \textbf{streamline} is a curve $(x(s), y(s))$ everywhere tangent to the velocity field:
+\[
+\frac{dx}{ds} = u(x,y), \quad \frac{dy}{ds} = v(x,y)
+\]
+This is an ODE system. Integrating numerically from a starting point $(x_0, y_0)$ traces the streamline.
+
+For steady flow, streamlines coincide with \textbf{pathlines} (trajectories of individual particles)
+and \textbf{streaklines} (loci of particles passing through a fixed point). In unsteady flow,
+these three concepts differ.
+
+\subsection{Numerical Integration}
+
+We use the fourth-order Runge-Kutta method (RK4) for accurate streamline computation:
+\[
+x_{n+1} = x_n + \frac{ds}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+\]
+where $k_1 = u(x_n, y_n)$, $k_2 = u(x_n + \tfrac{ds}{2}k_1, y_n + \tfrac{ds}{2}k_2)$, etc.
+
+\begin{lstlisting}[language=Python, caption=Computing a streamline]
+from euler import streamline_integrate, uniform_flow
+
+vx, vy = uniform_flow(vx_val=1.0, vy_val=0.5)
+
+# Integrate from (0, 0)
+pts = streamline_integrate(vx, vy, 0.0, 0.0,
+                           ds=0.01, n_steps=200)
+
+print(f"Streamline: {len(pts)} points")
+print(f"End point: ({pts[-1][0]:.2f}, {pts[-1][1]:.2f})")
+\end{lstlisting}
+
+\section{Basic Flow Patterns}
+
+Euler identified several elementary flows that can be superposed to model complex situations:
+
+\textbf{Uniform flow:} $\vec{v} = (U, 0)$. Straight, parallel streamlines.
+
+\textbf{Source/Sink:} $\vec{v} = \frac{m}{2\pi r} \hat{r}$. Radial flow outward (source) or inward (sink).
+
+\textbf{Vortex:} $\vec{v} = \frac{\Gamma}{2\pi r} \hat{\theta}$. Circular streamlines around a center.
+
+\textbf{Doublet:} Limit of a source-sink pair as separation $\to 0$. Used to model flow past cylinders.
+
+Each of these flows is \textbf{irrotational} (zero vorticity) except at singularities,
+meaning $\nabla \times \vec{v} = 0$. This allows us to define a \textbf{velocity potential}
+$\phi$ such that $\vec{v} = \nabla \phi$.
+
+\subsection{Stream Function}
+
+For 2D incompressible flow, we can also define a \textbf{stream function} $\psi$ such that:
+\[
+u = \frac{\partial \psi}{\partial y}, \qquad v = -\frac{\partial \psi}{\partial x}
+\]
+The stream function automatically satisfies the incompressibility condition $\nabla \cdot \vec{v} = 0$.
+Streamlines are contours of constant $\psi$.
+
+\begin{lstlisting}[language=Python, caption=Superposing flow patterns]
+from euler import (uniform_flow, source_flow,
+                   vortex_flow, flow_past_cylinder,
+                   streamline_integrate)
+
+# Uniform flow + source
+def vx_combo(x, y):
+    u, _ = uniform_flow(1.0)
+    s, _ = source_flow(strength=0.5)
+    return u(x, y) + s(x, y)
+
+def vy_combo(x, y):
+    _, v = uniform_flow(1.0)
+    _, sv = source_flow(strength=0.5)
+    return v(x, y) + sv(x, y)
+
+pts = streamline_integrate(vx_combo, vy_combo,
+                           0.0, 1.0, ds=0.02, n_steps=300)
+\end{lstlisting}
+
+\section{Flow Past a Cylinder}
+
+Superposing uniform flow with a doublet produces the classic potential flow around a circular cylinder. The stream function is:
+\[
+\psi = U \left(r - \frac{a^2}{r}\right) \sin\theta
+\]
+where $a$ is the cylinder radius and $U$ is the freestream velocity.
+
+On the cylinder surface ($r = a$), we have $\psi = 0$, confirming that the cylinder is a streamline.
+The velocity on the surface is purely tangential:
+\[
+v_\theta = -\frac{\partial \psi}{\partial r}\bigg|_{r=a} = -2U\sin\theta
+\]
+
+\begin{lstlisting}[language=Python, caption=Flow past a cylinder]
+from euler import flow_past_cylinder, streamline_integrate
+
+vx, vy = flow_past_cylinder(radius=1.0, freestream=1.0)
+
+# Streamlines above and below the cylinder
+for y0 in [0.5, 1.0, 1.5, 2.0]:
+    pts = streamline_integrate(vx, vy, -3.0, y0,
+                               ds=0.03, n_steps=200)
+    print(f"y0={y0}: {len(pts)} points")
+\end{lstlisting}
+
+This produces \textbf{d'Alembert's paradox}: the drag force on a cylinder in potential flow is exactly zero.
+Real fluids have viscosity, which creates boundary layers and wake formation.
+
+\subsection{Stagnation Points}
+
+Stagnation points occur where the velocity vanishes. For flow past a cylinder, the stagnation
+points are at $(x,y) = (\pm a, 0)$. At these points, the pressure reaches its maximum value
+(ram pressure).
+
+\begin{lstlisting}[language=Python, caption=Finding stagnation points]
+from euler import flow_past_cylinder, stagnation_points
+
+vx, vy = flow_past_cylinder(radius=1.0, freestream=1.0)
+stag_pts = stagnation_points(vx, vy, x_range=(-3, 3), y_range=(-3, 3))
+print(f"Stagnation points: {stag_pts}")
+\end{lstlisting}
+
+\section{Bernoulli's Principle Along Streamlines}
+
+For steady, inviscid, incompressible flow, Bernoulli's equation holds along any streamline:
+\[
+p + \frac{1}{2}\rho|\vec{v}|^2 = \text{constant}
+\]
+Higher velocity implies lower pressure. This explains lift on airfoils, the Venturi effect,
+and why streamlines crowd together where velocity increases.
+
+\subsection{Derivation from Euler's Equations}
+
+Taking the dot product of Euler's equation with $\vec{v}$ and using the identity:
+\[
+(\vec{v} \cdot \nabla)\vec{v} = \nabla\left(\frac{|\vec{v}|^2}{2}\right) - \vec{v} \times (\nabla \times \vec{v})
+\]
+
+For irrotational flow ($\nabla \times \vec{v} = 0$), this simplifies to:
+\[
+\nabla\left(p + \frac{1}{2}\rho|\vec{v}|^2\right) = 0
+\]
+showing that $p + \frac{1}{2}\rho|\vec{v}|^2$ is constant everywhere (not just along streamlines)
+for irrotational flow.
+
+\begin{lstlisting}[language=Python, caption=Computing pressure from Bernoulli]
+from euler import bernoulli_pressure, flow_past_cylinder
+
+vx, vy = flow_past_cylinder(radius=1.0)
+p = bernoulli_pressure(vx, vy, rho=1.2,
+                       p_inf=101325.0, v_inf=10.0)
+
+# Pressure at a point
+p_at_point = p(1.5, 0.5)
+print(f"Pressure at (1.5, 0.5): {p_at_point:.1f} Pa")
+\end{lstlisting}
+
+\section{Vorticity and Circulation}
+
+The \textbf{vorticity} $\omega = \nabla \times \vec{v}$ measures local rotation of fluid elements.
+For the elementary flows above (except the vortex singularity), vorticity is zero.
+
+\textbf{Circulation} around a closed curve $C$ is defined as:
+\[
+\Gamma = \oint_C \vec{v} \cdot d\vec{r}
+\]
+By Stokes' theorem, $\Gamma = \iint_S \omega \, dA$ where $S$ is any surface bounded by $C$.
+For irrotational flow, circulation around any closed curve is zero (unless the curve encloses a vortex).
+
+\section{Modern Relevance}
+
+Streamline theory remains essential in aerodynamics (airfoil design), hydrodynamics (ship hulls),
+meteorology (weather map streamlines), and biomedical engineering (blood flow modeling).
+Modern CFD solvers still solve the Euler equations as a first step before adding viscous terms.
+The concept of streamlines is fundamental to every visualization of fluid flow, from wind tunnel
+smoke trails to satellite weather maps.
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: What is the difference between a streamline, a pathline, and a streakline?} \\
+For steady flow, all three coincide. A \textbf{streamline} is tangent to the instantaneous velocity field. A \textbf{pathline} traces the trajectory of a single fluid particle over time. A \textbf{streakline} connects all particles that have passed through a fixed point. Only in unsteady flow do they differ.
+
+\item \textbf{Q: Why does potential flow predict zero drag on a cylinder?} \\
+This is d'Alembert's paradox. The Euler equations assume zero viscosity, so there is no boundary layer separation and no wake. The pressure distribution is symmetric fore-and-aft, yielding zero net drag. Real fluids have viscosity, which breaks this symmetry.
+
+\item \textbf{Q: How do you compute a streamline numerically?} \\
+Treat the streamline ODE $dx/ds = u(x,y), dy/ds = v(x,y)$ as a system and integrate with any ODE solver (Euler's method, RK4). The step size $ds$ controls accuracy; smaller steps give smoother curves but require more computation.
+
+\item \textbf{Q: What is the difference between a source and a vortex?} \\
+A source has radial flow outward (or inward for a sink): $\vec{v} \propto \hat{r}/r$. A vortex has tangential flow: $\vec{v} \propto \hat{\theta}/r$. Both are irrotational except at the singularity. Sources model fluid injection; vortices model rotating flows.
+
+\item \textbf{Q: Can streamlines cross?} \\
+No. At any point in the flow, the velocity has a unique direction. If two streamlines crossed, a particle at the intersection would have two different velocities simultaneously, which is impossible. Streamlines can only meet at stagnation points where velocity is zero.
+
+\item \textbf{Q: How does Bernoulli's equation relate to conservation of energy?} \\
+Bernoulli's equation is the mechanical energy balance for a fluid particle. The term $p/\rho$ represents flow work (pressure energy), $\frac{1}{2}|\vec{v}|^2$ is kinetic energy per unit mass, and $gz$ is potential energy per unit mass. Their sum is constant along a streamline in inviscid, steady flow.
+
+\item \textbf{Q: What is the significance of irrotational flow?} \\
+Irrotational flow ($\nabla \times \vec{v} = 0$) allows the introduction of a velocity potential $\phi$ such that $\vec{v} = \nabla \phi$. This reduces the problem to solving Laplace's equation $\nabla^2 \phi = 0$, which is much simpler than the full Euler equations.
+\end{itemize}
+
+\begin{exercise}
+Compute streamlines for a source of strength $m=1$ placed in a uniform flow of speed $U=1$.
+Find the stagnation point where the velocity vanishes. Show that the streamline through the
+stagnation point forms a semi-infinite body shape.
+\end{exercise}
+
+\begin{exercise}
+Show that the stream function $\psi = U(r - a^2/r)\sin\theta$ for flow past a cylinder yields
+zero normal velocity at $r=a$. Compute the tangential velocity on the cylinder surface.
+\end{exercise}
+
+\begin{exercise}
+Use Bernoulli's equation to compute the pressure coefficient $C_p = (p - p_\infty)/(0.5\rho U^2)$
+at the surface of a cylinder in potential flow. Where is $C_p$ minimum? What is the drag
+force predicted by this model?
+\end{exercise}
+
+\begin{exercise}
+Compute the circulation around a circle of radius $2a$ centered on a vortex of strength $\Gamma$
+at the origin. Verify that the circulation equals $\Gamma$.
+\end{exercise}
+
+\begin{exercise}
+Show that the superposition of a uniform flow $U$ and a doublet of strength $\kappa = 2\pi U a^2$
+produces flow past a cylinder of radius $a$. Derive the stream function and velocity field.
+\end{exercise}
+
+\begin{exercise}
+For the velocity field $u = x^2 - y^2$, $v = -2xy$, compute the vorticity and show that
+the flow is irrotational. Find the velocity potential $\phi$ and stream function $\psi$.
+\end{exercise}
+
+\begin{exercise}
+Compute the stagnation points for flow past a cylinder with circulation (the \textbf{Magnus effect}).
+How does the circulation affect the lift force?
+\end{exercise}
+
+\begin{exercise}
+Derive the velocity field for a source-sink pair (dipole) and show that it can be obtained
+as the limit of a source and sink approaching each other.
+\end{exercise}
+
+\begin{exercise}
+Use the stream function to compute the volume flow rate between two streamlines.
+Show that the flow rate is proportional to the difference in stream function values.
+\end{exercise}
+
+\begin{exercise}
+For the velocity field $\vec{v} = (-y, x)$, show that the streamlines are circles centered at the origin.
+Compute the circulation around a circle of radius $R$ and verify that it equals $2\pi R^2$.
+\end{exercise}
+
+\begin{exercise}
+Derive the velocity potential for flow past a cylinder and show that it satisfies Laplace's equation everywhere outside the cylinder.
+\end{exercise}
+
+\section{Stream Function Theory}
+
+\subsection{Definition and Properties}
+
+For two-dimensional incompressible flow, the \textbf{stream function} $\psi(x,y)$ is defined such that:
+\[
+u = \frac{\partial \psi}{\partial y}, \qquad v = -\frac{\partial \psi}{\partial x}
+\]
+
+This definition automatically satisfies the continuity equation $\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0$.
+
+\begin{theorem}[Stream Function Properties]
+The following properties hold for any stream function $\psi$:
+\\begin{enumerate}
+    \item Streamlines are contours of constant $\psi$: $\psi(x,y) = C$.
+    \item The volume flow rate between two streamlines equals $\psi_2 - \psi_1$.
+    \item For irrotational flow, $\psi$ satisfies Laplace's equation: $\nabla^2 \psi = 0$.
+    \item The velocity potential $\phi$ and stream function $\psi$ satisfy the Cauchy-Riemann equations.
+\\end{enumerate}
+\end{theorem}
+
+\begin{lstlisting}[caption={Stream function for uniform flow}, label=lst:stream_uniform]
+from euler import uniform_flow, stream_function
+
+# Uniform flow at angle \alpha
+vx, vy = uniform_flow(vx_val=1.0, vy_val=1.0)
+
+# Stream function \psi = Uy - Vx for flow with components (U,V)
+def psi_uniform(x, y):
+    return y - x  # For vx=1, vy=1
+
+print(f"\psi(1,2) = {psi_uniform(1, 2)}")
+print(f"\psi(3,4) = {psi_uniform(3, 4)}")
+\end{lstlisting}
+
+\subsection{Stream Function for Elementary Flows}
+
+\textbf{Uniform flow:} $\psi = Uy - Vx$\\
+\textbf{Source at origin:} $\psi = \frac{m}{2\\pi}\\theta = \frac{m}{2\\pi}\\arctan(y/x)$\\
+\textbf{Vortex at origin:} $\psi = -\frac{\\Gamma}{2\\pi}\\ln r = -\frac{\\Gamma}{4\\pi}\\ln(x^2+y^2)$\\
+\textbf{Doublet:} $\psi = -\frac{\\kappa}{2\\pi}\frac{y}{x^2+y^2}$
+
+These stream functions can be superposed to construct more complex flows.
+
+\section{Differential Equations in Fluid Dynamics}
+
+\subsection{The Euler Equations as ODEs}
+
+Along a streamline, the Euler equations can be written as a system of ordinary differential equations. For steady, inviscid, incompressible flow:
+
+\[
+\frac{d\\vec{v}}{ds} = -\frac{1}{\\rho}\nabla p + \\vec{g}
+\]
+
+where $s$ is the arc length along the streamline.
+
+\subsection{Vorticity Equation}
+
+Taking the curl of Euler's equation gives the vorticity transport equation:
+
+\[
+\frac{D\\omega}{Dt} = (\\omega \\cdot \nabla)\\vec{v}
+\]
+
+For two-dimensional flow, this simplifies to $\frac{D\\omega}{Dt} = 0$, meaning vorticity is conserved following fluid particles.
+
+\begin{lstlisting}[caption={Computing vorticity field}, label=lst:vorticity]
+import numpy as np
+
+def compute_vorticity(ux, uy, dx, dy):
+    """Compute vorticity \omega = \partialv/\partialx - \partialu/\partialy from velocity fields"""
+    dv_dx = np.gradient(uy, dx, axis=1)
+    du_dy = np.gradient(ux, dy, axis=0)
+    return dv_dx - du_dy
+
+# Example: simple shear flow
+x = np.linspace(0, 1, 100)
+y = np.linspace(0, 1, 100)
+X, Y = np.meshgrid(x, y)
+
+# Shear flow: u = y, v = 0
+ux = Y
+uy = np.zeros_like(X)
+
+omega = compute_vorticity(ux, uy, x[1]-x[0], y[1]-y[0])
+print(f"Maximum vorticity: {np.max(np.abs(omega)):.4f}")
+\end{lstlisting}
+
+\subsection{Potential Flow Equations}
+
+For irrotational flow ($\nabla \\times \\vec{v} = 0$), we can introduce a \textbf{velocity potential} $\phi$ such that $\\vec{v} = \nabla \phi$. Combined with incompressibility ($\nabla \\cdot \\vec{v} = 0$), this gives:
+
+\[
+\nabla^2 \phi = 0
+\]
+
+This is \textbf{Laplace's equation}, whose solutions are called \textbf{harmonic functions}. The stream function $\psi$ is also harmonic for irrotational flow.
+
+\section{Boundary Value Problems}
+
+\subsection{Flow Around Objects}
+
+The classic problem of potential flow around a body requires solving Laplace's equation subject to boundary conditions:
+
+\begin{itemize}
+    \item \textbf{No-penetration:} $\frac{\partial \phi}{\partial n} = 0$ on the body surface
+    \item \textbf{Far-field:} $\phi \to Ux$ as $r \to \infty$
+\end{itemize}
+
+\subsection{Numerical Solution}
+
+Finite-difference methods can solve Laplace's equation on a grid using iterative techniques like Gauss-Seidel or successive over-relaxation (SOR).
+
+\begin{lstlisting}[caption={Solving Laplace's equation}, label=lst:laplace]
+import numpy as np
+
+def solve_laplace(nx, ny, max_iter=1000, tol=1e-6):
+    """Solve \nabla\textsuperscript{2}\varphi = 0 using Gauss-Seidel iteration"""
+    phi = np.zeros((ny, nx))
+    
+    # Boundary conditions
+    phi[-1, :] = 1.0  # Right: \varphi = Ux
+    phi[0, :] = 0.0   # Left: \varphi = 0
+    
+    for iteration in range(max_iter):
+        phi_old = phi.copy()
+        
+        for i in range(1, ny-1):
+            for j in range(1, nx-1):
+                phi[i, j] = 0.25 * (phi[i+1, j] + phi[i-1, j] + 
+                                   phi[i, j+1] + phi[i, j-1])
+        
+        # Check convergence
+        error = np.max(np.abs(phi - phi_old))
+        if error < tol:
+            print(f"Converged after {iteration} iterations")
+            break
+    
+    return phi
+
+phi = solve_laplace(50, 50)
+print(f"\varphi at center: {phi[25, 25]:.4f}")
+\end{lstlisting}
+
+\section{Unsteady Flow and Differential Equations}
+
+\subsection{Unsteady Streamlines}
+
+For unsteady flow, streamlines are defined at each instant by solving:
+
+\[
+\frac{dx}{u(x,y,t)} = \frac{dy}{v(x,y,t)}
+\]
+
+This gives different streamline patterns at different times. The pathlines (trajectories of particles) are found by integrating:
+
+\[
+\frac{dx}{dt} = u(x,y,t), \qquad \frac{dy}{dt} = v(x,y,t)
+\]
+
+\subsection{Streaklines}
+
+Streaklines connect all fluid particles that have passed through a fixed point. They are found by integrating the pathline equations backward in time from the release point.
+
+\begin{lstlisting}[caption={Unsteady streamline computation}, label=lst:unsteady]
+from euler import streamline_integrate
+
+def unsteady_vx(x, y, t):
+    return np.cos(t) * (1 - x*x + y*y)
+
+def unsteady_vy(x, y, t):
+    return np.sin(t) * (-2*x*y)
+
+# Streamline at different times
+for t in [0, np.pi/4, np.pi/2]:
+    pts = streamline_integrate(
+        lambda x, y: unsteady_vx(x, y, t),
+        lambda x, y: unsteady_vy(x, y, t),
+        0.0, 0.0, ds=0.02, n_steps=100
+    )
+    print(f"t = {t:.2f}: {len(pts)} points, end = ({pts[-1][0]:.2f}, {pts[-1][1]:.2f})")
+\end{lstlisting}
+
+\section{Applications}
+
+\subsection{Aerodynamics}
+
+Potential flow theory, despite its limitations, provides valuable insights for airfoil design. The \textbf{Kutta condition} selects the physically correct circulation around an airfoil, leading to the \textbf{Kutta-Joukowski theorem}:
+
+\[
+L' = \\rho U \\Gamma
+\]
+
+where $L'$ is the lift per unit span and $\\Gamma$ is the circulation.
+
+\subsection{Meteorology}
+
+Weather maps display streamlines of the atmospheric wind field. The geostrophic approximation relates wind to pressure gradients:
+
+\[
+f v = \frac{1}{\\rho}\frac{\partial p}{\partial x}, \qquad f u = -\frac{1}{\\rho}\frac{\partial p}{\partial y}
+\]
+
+where $f = 2\\Omega\\sin\phi$ is the Coriolis parameter.
+
+\subsection{Biomedical Flow}
+
+Blood flow in large arteries can be approximated as inviscid in the core region. Streamline analysis helps visualize flow patterns and identify regions of recirculation that may promote thrombus formation.
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why is the stream function useful?} \\\\
+It automatically satisfies continuity for incompressible flow and reduces the number of dependent variables from two ($u,v$) to one ($\psi$). Contours of $\psi$ give streamlines directly.
+
+\item \textbf{Q: Can stream functions be used for compressible flow?} \\\\
+For compressible flow, a modified stream function can be defined using the mass flux $\\rho \\vec{v}$ instead of $\\vec{v}$. However, the resulting equations are more complex.
+
+\item \textbf{Q: What is the difference between $\varphi$ and $\psi$?} \\\\
+The velocity potential $\phi$ satisfies $\\vec{v} = \nabla\phi$ and exists for irrotational flow. The stream function $\psi$ satisfies $u = \psi_y, v = -\psi_x$ and exists for 2D incompressible flow. For irrotational, incompressible flow, both exist and are harmonic conjugates.
+
+\item \textbf{Q: How do I handle singularities in stream functions?} \\\\
+Singularities occur at sources, sinks, and vortices. In numerical simulations, these are typically avoided by placing them outside the computational domain or by using specialized grid treatments.
+
+\item \textbf{Q: What is the relation between streamlines and equipotential lines?} \\\\
+For irrotational, incompressible flow, streamlines ($\psi = \\text{const}$) and equipotential lines ($\phi = \\text{const}$) are orthogonal everywhere, forming a conformal grid.
+\end{itemize}
+
+\section{Advanced Exercises}
+
+\begin{exercise}
+Derive the stream function for a source-sink pair (dipole) and show that the streamlines are circles tangent to the $y$-axis at the origin.
+\end{exercise}
+
+\begin{exercise}
+Show that for 2D irrotational flow, the stream function $\psi$ satisfies Laplace's equation $\nabla^2 \psi = 0$. Use this to derive the stream function for flow past a cylinder.
+\end{exercise}
+
+\begin{exercise}
+Use the method of images to find the stream function for a source near a solid wall. Show that the wall is a streamline.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement a finite-difference solver for Laplace's equation on a grid with a circular cylinder. Compute the pressure distribution on the cylinder surface using Bernoulli's equation.
+\end{exercise}
+
+\begin{exercise}
+For the velocity field $\\vec{v} = (x^2 - y^2, -2xy)$, find the velocity potential $\phi$ and stream function $\psi$. Verify that they satisfy the Cauchy-Riemann equations.
+\end{exercise}
+
+\begin{exercise}
+Compute the stream function and velocity potential for flow past a rotating cylinder (with circulation $\\Gamma$). Show how the circulation affects the lift force via the Kutta-Joukowski theorem.
+\end{exercise}
+
+\begin{exercise}
+Derive the vorticity equation from Euler's equations and show that for 2D flow, vorticity is materially conserved: $D\\omega/Dt = 0$.
+\end{exercise}
+
+\begin{exercise}
+Use conformal mapping (Joukowski transformation) to map flow past a cylinder to flow past an airfoil. Describe the resulting flow pattern and lift characteristics.
+\end{exercise}

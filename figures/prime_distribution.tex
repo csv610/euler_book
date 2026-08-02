@@ -1,0 +1,21 @@
+% Prime distribution visualization
+\begin{tikzpicture}[scale=0.9]
+  % Axes
+  \draw[->, >=latex] (0,0) -- (8,0) node[right] {$x$};
+  \draw[->, >=latex] (0,0) -- (0,6) node[above] {$\pi(x)$};
+  
+  % π(x) curve (actual)
+  \draw[green!60!black, thick, domain=0.5:7.5, samples=100] 
+    plot (\x, {5.5 - 1.2*ln(\x)});
+  
+  % x/ln(x) approximation
+  \draw[red!70!black, thick, dashed, domain=0.5:7.5, samples=100] 
+    plot (\x, {5.5 - 1.15*ln(\x)});
+  
+  % Legend
+  \node[left] at (0.3,5) {green: $\pi(x)$};
+  \node[left] at (0.3,4.3) {red (dashed): $x/\ln x$};
+  
+  % Title
+  \node[above=0.3cm] at (4,6) {Prime Number Theorem};
+\end{tikzpicture}

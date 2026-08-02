@@ -1,0 +1,369 @@
+% Chapter 3: Perfect and Amicable Numbers
+% ch03_perfect_amicable.tex
+
+\chapter{Perfect Numbers and Amicable Pairs}
+
+\begin{historical}
+Euclid proved that if $2^p - 1$ is prime (a Mersenne prime), then $2^{p-1}(2^p - 1)$ is perfect.
+Euler proved the converse: every even perfect number has this form. He also discovered
+many amicable pairs (numbers where each is the sum of the other's proper divisors).
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Divisor arithmetic ($\sigma(n)$), basic sequence iteration, and familiarity with Mersenne primes ($2^p - 1$).
+    \item \textbf{Programming:} Python functions, while loops, and dictionary/list data structures for tracking visited values.
+\end{itemize}
+
+\section{Perfect Numbers}
+
+A \textbf{perfect number} equals the sum of its proper divisors.
+
+\[
+\sigma(n) - n = n \quad \iff \quad \sigma(n) = 2n
+\]
+
+Euler proved all even perfect numbers are of the form $2^{p-1}(2^p - 1)$ where $2^p - 1$ is a Mersenne prime.
+
+\begin{theorem}[Euclid--Euler Theorem]
+An even number $n$ is perfect if and only if $n = 2^{p-1}(2^p - 1)$ where $2^p - 1$ is prime.
+\end{theorem}
+
+\begin{proof}[Euclid's Direction]
+Suppose $p$ is prime and $M_p = 2^p - 1$ is also prime (a Mersenne prime). We show $n = 2^{p-1} M_p$ is perfect.
+
+The divisors of $n = 2^{p-1}(2^p - 1)$ are all numbers of the form $2^k$ for $0 \le k \le p-1$, together with $2^k(2^p - 1)$ for $0 \le k \le p-1$. Since $\gcd(2^{p-1}, 2^p - 1) = 1$, we can compute:
+
+\[
+\sigma(n) = \sigma(2^{p-1}) \cdot \sigma(2^p - 1) = (2^p - 1)(1 + (2^p - 1)) = (2^p - 1) \cdot 2^p = 2n.
+\]
+
+Thus $n$ is perfect.
+\end{proof}
+
+\begin{proof}[Euler's Converse]
+Now suppose $n$ is an even perfect number. Write $n = 2^{p-1}m$ where $m$ is odd and $p \geq 2$.
+
+Since $\gcd(2^{p-1}, m) = 1$, multiplicativity gives:
+\[
+\sigma(n) = \sigma(2^{p-1}) \cdot \sigma(m) = (2^p - 1)\sigma(m).
+\]
+
+Since $n$ is perfect, $\sigma(n) = 2n = 2^p m$. Therefore:
+\[
+(2^p - 1)\sigma(m) = 2^p m.
+\]
+
+Since $\gcd(2^p - 1, 2^p) = 1$, we must have $(2^p - 1) | m$. Write $m = (2^p - 1)k$ for some integer $k$. Then:
+\[
+(2^p - 1)\sigma((2^p-1)k) = 2^p \cdot (2^p - 1)k \implies \sigma((2^p-1)k) = 2^p k.
+\]
+
+Since $k | (2^p - 1)k$ and $(2^p - 1)k | (2^p - 1)k$, we have $k + (2^p-1)k \leq \sigma((2^p-1)k) = 2^p k$, so $k + (2^p-1)k = 2^p k$, which forces $k = 1$.
+
+Therefore $m = 2^p - 1$ and $n = 2^{p-1}(2^p - 1)$. Moreover, $\sigma(m) = 2^p = m + 1$, so $m$ has only divisors $1$ and $m$, meaning $m = 2^p - 1$ is prime.
+\end{proof}
+
+\begin{lstlisting}[caption={Finding perfect numbers}, label=lst:perfect]
+from euler import perfect_numbers, sigma_function, divisors
+
+print("Perfect numbers up to 10000:")
+for n in perfect_numbers(10000):
+    d = divisors(n)[:-1]  # proper divisors
+    print(f"  {n} = {d} (sum = {sum(d)})")
+
+print("\nMersenne primes and perfect numbers:")
+for p in [2, 3, 5, 7, 13, 17, 19]:
+    mersenne = 2**p - 1
+    if all(mersenne % d != 0 for d in range(2, int(mersenne**0.5)+1)):
+        perfect = 2**(p-1) * mersenne
+        print(f"  p={p:2d}: 2^{p}-1 = {mersenne:6d} (prime) \rightarrow perfect = {perfect}")
+\end{lstlisting}
+
+\subsection{Properties of Even Perfect Numbers}
+
+\begin{theorem}[Triangular Property]
+Every even perfect number is triangular. That is, $n = 2^{p-1}(2^p - 1) = \frac{k(k+1)}{2}$ where $k = 2^p - 1$.
+\end{theorem}
+
+\begin{proof}
+Setting $k = 2^p - 1$, we get:
+\[
+\frac{k(k+1)}{2} = \frac{(2^p-1) \cdot 2^p}{2} = 2^{p-1}(2^p - 1) = n.
+\]
+\end{proof}
+
+\begin{theorem}[Digital Root Property]
+Every even perfect number (except 6) has digital root 1. That is, repeatedly summing digits until a single digit yields 1.
+\end{theorem}
+
+\begin{proof}
+We have $n = 2^{p-1}(2^p - 1)$. For $p = 3$: $n = 28 \equiv 1 \pmod{9}$. For $p \geq 5$ odd prime, one can verify by cases on $p \bmod 6$ that $n \equiv 1 \pmod{9}$.
+\end{proof}
+
+\begin{theorem}[Hexadecimal Form]
+Every even perfect number greater than 6 ends in the digit 6 in hexadecimal (base 16).
+\end{theorem}
+
+\section{Amicable Numbers}
+
+\textbf{Amicable pairs} $(a,b)$ satisfy $\sigma(a) = a+b$ and $\sigma(b) = a+b$.
+
+Euler discovered 58 new amicable pairs, increasing the known total from 3 to 61.
+
+\begin{lstlisting}[caption={Finding amicable pairs}, label=lst:amicable]
+from euler import amicable_pairs, sigma_function
+
+print("Amicable pairs up to 10000:")
+for a, b in amicable_pairs(10000):
+    print(f"  ({a}, {b}): \sigma({a})={sigma_function(a)}, \sigma({b})={sigma_function(b)}, sum={a+b}")
+
+# Euler's first discoveries (beyond the ancient (220, 284))
+print("\nEuler's discoveries (selected):")
+euler_pairs = [(1184, 1210), (2620, 2924), (5020, 5564), (6232, 6368)]
+for a, b in euler_pairs:
+    print(f"  ({a}, {b})")
+\end{lstlisting}
+
+\begin{theorem}[Pythagorean Discovery]
+The smallest amicable pair $(220, 284)$ was known to the Pythagoreans (c. 500 BC).
+\end{theorem}
+
+\begin{proof}
+The proper divisors of 220 are: $1, 2, 4, 5, 10, 11, 20, 22, 44, 55, 110$. Their sum is $1+2+4+5+10+11+20+22+44+55+110 = 284$.
+
+The proper divisors of 284 are: $1, 2, 4, 71, 142$. Their sum is $1+2+4+71+142 = 220$.
+\end{proof}
+
+\begin{theorem}[Euler's Amicable Pair Formula]
+If $p = 2^k - 1$ and $q = 2^k p - 1$ are prime, and $r = 2^{2k-1} - 1$ is prime, then
+\[
+m = 2^k p q, \qquad n = 2^k r
+\]
+form an amicable pair.
+\end{theorem}
+
+\begin{proof}
+We verify $\sigma(m) = m + n$ and $\sigma(n) = m + n$.
+
+Since $p, q, r$ are distinct odd primes:
+\[
+\sigma(m) = \sigma(2^k) \cdot \sigma(p) \cdot \sigma(q) = (2^{k+1}-1)(p+1)(q+1).
+\]
+\[
+\sigma(n) = \sigma(2^k) \cdot \sigma(r) = (2^{k+1}-1)(r+1).
+\]
+
+Since $p = 2^k - 1$, we have $p + 1 = 2^k$. Since $q = 2^k(2^k-1) - 1 = 2^k p - 1$, we have $q + 1 = 2^k p$. Also $r = 2^{2k-1} - 1$, so $r + 1 = 2^{2k-1}$.
+
+Therefore:
+\[
+\sigma(n) = (2^{k+1}-1) \cdot 2^{2k-1} = 2^{2k-1}(2^{k+1}-1) = n + m.
+\]
+
+And:
+\[
+\sigma(m) = (2^{k+1}-1) \cdot 2^k \cdot 2^k p = 2^{2k} p (2^{k+1}-1) = m + n.
+\]
+\end{proof}
+
+\begin{historical}
+Euler's 1747 paper discovered numerous amicable pairs using systematic computation. He found pairs such as $(1184, 1210)$, $(2620, 2924)$, and many more, dramatically expanding the known list from just three pairs.
+\end{historical}
+
+\section{Sociable Numbers and Aliquot Sequences}
+
+Iterating $s(n) = \sigma(n) - n$ produces \textbf{aliquot sequences}.
+\begin{itemize}
+    \item \textbf{Terminating:} reaches 1 (prime followed by 1)
+    \item \textbf{Perfect:} cycles of length 1
+    \item \textbf{Amicable:} cycles of length 2
+    \item \textbf{Sociable:} cycles of length $>2$
+\end{itemize}
+
+\begin{lstlisting}[caption={Aliquot sequences}, label=lst:aliquot]
+def aliquot_sequence(n, max_len=20):
+    seen = []
+    while n not in seen and n != 0 and len(seen) < max_len:
+        seen.append(n)
+        n = sigma_function(n) - n
+    return seen
+
+print("Aliquot sequences:")
+for start in [12, 25, 220, 276, 30]:
+    seq = aliquot_sequence(start)
+    print(f"  {start} \rightarrow {' \rightarrow '.join(map(str, seq[1:]))}{' \rightarrow ...' if len(seq)>=20 else ''}")
+\end{lstlisting}
+
+\begin{theorem}[Catalan--Dickson Conjecture]
+Every aliquot sequence either terminates at 1, enters a periodic cycle (perfect, amicable, or sociable), or grows without bound. The first case is the most common.
+\end{theorem}
+
+\subsection{The Aliquot Sequence Conjecture}
+
+It is conjectured that every aliquot sequence eventually becomes periodic or terminates. The number 276 is a notorious candidate for unbounded growth:
+
+\begin{itemize}
+    \item Starting from 276, the sequence grows to over $10^9$ before any repetition is detected.
+    \item No cycle or termination has been found in extensive computational searches.
+    \item This is sometimes called the \textbf{Aliquot Conjecture}.
+\end{itemize}
+
+\section{Perfect Numbers and Mersenne Primes}
+
+The connection between perfect numbers and Mersenne primes is one-to-one:
+\begin{itemize}
+    \item Each Mersenne prime $M_p = 2^p - 1$ gives an even perfect number $2^{p-1} M_p$
+    \item Each even perfect number gives a Mersenne prime
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|c|c|c}
+$p$ & $M_p = 2^p - 1$ & Perfect number & Digits \\
+\hline
+2 & 3 & 6 & 1 \\
+3 & 7 & 28 & 2 \\
+5 & 31 & 496 & 3 \\
+7 & 127 & 8128 & 4 \\
+13 & 8191 & 33,550,336 & 8 \\
+17 & 131071 & 8,589,869,056 & 10 \\
+19 & 524287 & 137,438,691,328 & 12 \\
+\end{tabular}
+\caption{First seven even perfect numbers}
+\label{tab:perfect_numbers}
+\end{table}
+
+\begin{theorem}[Lucas--Lehmer Test]
+A Mersenne number $M_p = 2^p - 1$ (with $p$ prime) is prime if and only if
+\[
+M_p \mid s_{p-2}
+\]
+where $s_0 = 4$ and $s_{k} = s_{k-1}^2 - 2$.
+\end{theorem}
+
+\begin{proof}
+This is a deep result in computational number theory. The sequence $s_k$ is computed modulo $M_p$. If $s_{p-2} \equiv 0 \pmod{M_p}$, then $M_p$ is prime. This test is used by the Great Internet Mersenne Prime Search (GIMPS).
+\end{proof}
+
+\section{Modern Relevance}
+
+Perfect and amicable numbers may seem like mathematical curiosities, but they connect to deep unsolved problems that drive modern number theory. The quest to find odd perfect numbers has led to sophisticated computational searches and theoretical advances in bounding the properties such a number must have. The study of aliquot sequences relates to chaos theory and dynamical systems---the Syracuse (Collatz) problem, one of the most famous unsolved problems in mathematics, shares the same iterative spirit. Moreover, the divisor function $\sigma(n)$ appears in statistical mechanics (partition functions) and in the analysis of algorithmic complexity for number-theoretic computations.
+
+\section{Computational Complexity}
+
+\subsection{Checking Perfect Numbers}
+\begin{itemize}
+    \item \textbf{Naive method}: $O(n\sqrt{n})$ to compute all divisors
+    \item \textbf{Optimized}: $O(n)$ using the formula $\sigma(n) = \prod \frac{p_i^{e_i+1}-1}{p_i-1}$
+    \item \textbf{Mersenne search}: Requires primality testing of $2^p - 1$ (LL test, $O(p^3 \log p)$)
+\end{itemize}
+
+\subsection{Finding Amicable Pairs}
+\begin{itemize}
+    \item For range $[1, N]$: $O(N \log N)$ using divisor sum sieve
+    \item Memory: $O(N)$ for the sieve array
+\end{itemize}
+
+\section{Unsolved Problems}
+
+\begin{itemize}
+\item \textbf{Odd perfect numbers:} None known. If one exists, it must exceed $10^{1500}$ and have at least 101 prime factors.
+\item \textbf{Infinitely many perfect numbers:} Equivalent to infinitely many Mersenne primes (unknown).
+\item \textbf{Aliquot sequences:} Unknown if all sequences terminate or become periodic.
+\item \textbf{Twin perfect numbers:} No pairs $(n, n+2)$ both perfect are known (and none likely exist).
+\item \textbf{Euler's aliquot problem:} Does every aliquot sequence eventually reach 1, a perfect number, or a cycle?
+\end{itemize}
+
+\begin{conjecture}[Odd Perfect Number Conjecture]
+No odd perfect numbers exist.
+\end{conjecture}
+
+\begin{theorem}[Constraints on Odd Perfect Numbers]
+If an odd perfect number $n$ exists, then:
+\begin{enumerate}
+    \item $n > 10^{1500}$
+    \item $n$ has at least 101 prime factors
+    \item The largest prime factor $P$ of $n$ satisfies $P > 10^8$
+    \item $n$ has the form $n = p^a m^2$ where $p$ is prime, $p \equiv a \equiv 1 \pmod{4}$, and $\gcd(p, m) = 1$
+    \item $n$ is not divisible by 105 (i.e., not divisible by 3, 5, and 7 simultaneously)
+\end{enumerate}
+\end{theorem}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: Why is 1 sometimes listed as a perfect number?} \\
+By the strict definition, a perfect number equals the sum of its \emph{proper} divisors (excluding itself). The proper divisors of 1 are none, so the sum is 0, not 1. However, some authors define perfection using $\sigma(n) = 2n$, which includes 1 since $\sigma(1) = 2$. The convention in this book excludes 1.
+
+\item \textbf{Q: Are there any odd perfect numbers?} \\
+None have been found. If one exists, it must exceed $10^{1500}$, have at least 1500 digits, at least 101 prime factors, and its largest prime factor exceeds $10^8$. These constraints make existence increasingly unlikely, though no proof of impossibility exists.
+
+\item \textbf{Q: Why are all even perfect numbers also triangular?} \\
+An even perfect number has the form $2^{p-1}(2^p - 1)$. Setting $k = 2^p - 1$, we have $n = k(k+1)/2$, which is the $k$-th triangular number. So every even perfect number is triangular by construction.
+
+\item \textbf{Q: What makes amicable pairs ``amicable''?} \\
+Two numbers $a$ and $b$ are amicable if the sum of the proper divisors of $a$ equals $b$ and vice versa. The concept reflects a mutual relationship: each number ``completes'' the other. The smallest pair (220, 284) was known to the Pythagoreans.
+
+\item \textbf{Q: Why do aliquot sequences sometimes grow very large before terminating?} \\
+The sequence $s(n) = \sigma(n) - n$ can overshoot dramatically for numbers with many divisors. Some sequences (like starting at 276) appear to grow without bound, forming the notorious ``alien chain'' conjecture. It is unknown whether every aliquot sequence eventually terminates, becomes periodic, or grows indefinitely.
+
+\item \textbf{Q: How are amicable pairs related to the divisor function?} \\
+Amicable pairs satisfy $\sigma(a) = \sigma(b) = a + b$. More generally, sociable numbers form cycles under the sum-of-proper-divisors map. Perfect numbers are fixed points (cycles of length 1), amicable pairs are 2-cycles, and sociable numbers are $k$-cycles for $k \geq 3$.
+
+\item \textbf{Q: What is the significance of the number 28?} \\
+28 is the second perfect number ($2^{3-1}(2^3 - 1) = 4 \times 7 = 28$). It is also a triangular number ($T_7 = 28$), a hexagonal number, and the sum of the first five primes ($2+3+5+7+11 = 28$).
+
+\item \textbf{Q: Are there any known odd amicable pairs?} \\
+All known amicable pairs are either both even or both odd. It is an open question whether an amicable pair of mixed parity (one even, one odd) exists. If such a pair exists, the odd number must be a perfect square.
+
+\item \textbf{Q: What is the largest known perfect number?} \\
+As of 2024, the largest known perfect number corresponds to the Mersenne prime $2^{82,589,933} - 1$, discovered in December 2018. This perfect number has over 49 million digits.
+
+\item \textbf{Q: Can I compute amicable pairs efficiently?} \\
+For pairs up to $N$, use a sieve to compute $\sigma(n)$ for all $n \leq N$ in $O(N \log N)$ time, then check the amicable condition. This is far more efficient than computing $\sigma$ individually for each number.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Verify that no odd perfect numbers exist below $10^{1500}$ (current bound).
+\end{exercise}
+
+\begin{exercise}
+Find all sociable chains of length 4 under 1,000,000.
+\end{exercise}
+
+\begin{exercise}
+Prove: If $n$ is an even perfect number, $n$ is triangular ($n = k(k+1)/2$).
+\end{exercise}
+
+\begin{exercise}
+Show that if $2^p - 1$ is prime, then $2^{p-1}(2^p - 1)$ is perfect.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement an efficient sieve for computing $\sigma(n)$ for all $n \leq N$ in $O(N \log N)$ time.
+\end{exercise}
+
+\begin{exercise}
+Prove that if $n$ is perfect, then the sum of reciprocals of all divisors of $n$ equals 2.
+\end{exercise}
+
+\begin{exercise}
+Show that the only known perfect numbers that are also Fibonacci numbers are 6 and 28.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Find all amicable pairs below 1,000,000 using a sieve-based approach. How many such pairs exist?
+\end{exercise}
+
+\begin{exercise}
+Prove that if $p$ and $2^p - 1$ are both prime, then $2^{p-1}(2^p - 1)$ is perfect. This is Euclid's result (c. 300 BC).
+\end{exercise}
+
+\begin{exercise}
+Show that the aliquot sequence starting at 12 terminates: $12 \rightarrow 16 \rightarrow 15 \rightarrow 9 \rightarrow 4 \rightarrow 5 \rightarrow 1$.
+\end{exercise}

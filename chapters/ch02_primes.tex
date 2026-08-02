@@ -1,0 +1,665 @@
+% Chapter 2: Prime Numbers and Factorization
+% ch02_primes.tex
+
+\chapter{Prime Numbers and Factorization}
+
+\begin{historical}
+Euler made fundamental contributions to prime number theory. He proved the divergence of
+the sum of reciprocals of primes ($\sum 1/p = \infty$), giving a new proof of the
+infinitude of primes. He also discovered the connection between the zeta function
+and primes through the Euler product formula, establishing the first bridge between
+analysis and number theory.
+\end{historical}
+
+\section{Prerequisites}
+
+To work through this chapter, you need:
+\begin{itemize}
+    \item \textbf{Mathematics:} Understanding of prime numbers, the Fundamental Theorem of Arithmetic (unique prime factorization), and basic infinite series convergence.
+    \item \textbf{Programming:} Python loops, list comprehensions, and the ability to implement iterative algorithms.
+\end{itemize}
+
+\section{The Sieve of Eratosthenes and Euler's Sieve}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \draw[->, >=latex] (0,0) -- (8,0) node[right] {$x$};
+  \draw[->, >=latex] (0,0) -- (0,6) node[above] {$\pi(x)$};
+  \draw[green!60!black, thick, domain=0.5:7.5, samples=100] plot (\x, {5.5 - 1.2*ln(\x)});
+  \draw[red!70!black, thick, dashed, domain=0.5:7.5, samples=100] plot (\x, {5.5 - 1.15*ln(\x)});
+  \node[left] at (0.3,5) {green: $\pi(x)$};
+  \node[left] at (0.3,4.3) {red: $x/\ln x$};
+\end{tikzpicture}
+\caption{Prime number distribution $\pi(x)$ vs x/ln(x)}
+\label{fig:primes}
+\end{figure}
+
+Euler improved the Sieve of Eratosthenes by removing each composite number only once.
+
+\begin{lstlisting}[caption={Prime sieves}, label=lst:prime_sieve]
+from euler import prime_sieve, is_prime, prime_factors
+
+# Sieve of Eratosthenes
+primes = prime_sieve(100)
+print(f"Primes up to 100: {primes}")
+print(f"Count: {len(primes)}")
+
+# Primality test
+for n in [97, 101, 1001, 1009]:
+    print(f"is_prime({n}) = {is_prime(n)}")
+
+# Prime factorization
+for n in [60, 100, 97, 1001, 123456]:
+    factors = prime_factors(n)
+    print(f"{n} = {' \times '.join(map(str, factors))}")
+\end{lstlisting}
+
+\section{Euler's Proof of Infinitely Many Primes}
+
+Euler proved that $\sum_p 1/p$ diverges, which implies there are infinitely many primes.
+His proof uses the Euler product:
+\[
+\prod_{p \le x} \frac{1}{1 - 1/p} = \sum_{\substack{n \ge 1 \\ p|n \Rightarrow p \le x}} \frac{1}{n} \ge \sum_{n=1}^x \frac{1}{n} \to \infty
+\]
+Since the harmonic series diverges, the product must diverge, requiring infinitely many primes.
+
+\begin{theorem}[Euler, 1737]
+The sum of reciprocals of primes diverges:
+\[
+\sum_{p \text{ prime}} \frac{1}{p} = \infty
+\]
+\end{theorem}
+
+\begin{proof}
+From the Euler product for $\zeta(s)$:
+\[
+\zeta(s) = \prod_p \frac{1}{1 - p^{-s}}
+\]
+As $s \to 1^+$, $\zeta(s) \to \infty$ (harmonic series diverges). Therefore:
+\[
+\prod_p \frac{1}{1 - 1/p} = \infty
+\]
+Taking logarithms: $\sum_p \log\frac{1}{1-1/p} = \infty$. Since $\log\frac{1}{1-1/p} \sim 1/p$, we get $ \sum_p 1/p = \infty$.
+\end{proof}
+
+\section{Distribution of Primes}
+
+Euler's work foreshadowed the Prime Number Theorem. The number of primes $\pi(x)$ satisfies:
+\[
+\pi(x) \sim \frac{x}{\log x}
+\]
+
+\begin{lstlisting}[caption={Prime distribution}, label=lst:prime_dist]
+from euler import prime_sieve
+import math
+
+for limit in [100, 1000, 10000, 100000]:
+    primes = prime_sieve(limit)
+    pi_x = len(primes)
+    approx = limit / math.log(limit)
+    print(f"\\pi({limit:>6}) = {pi_x:>6}  x/ln(x) = {approx:>8.1f}  ratio = {pi_x/approx:.4f}")
+\end{lstlisting}
+
+\section{Mertens' Theorems}
+
+Mertens proved several theorems about prime products that Euler's work made possible:
+
+\begin{theorem}[Mertens, 1874]
+\[
+\prod_{p \le x} \left(1 - \frac{1}{p}\right) \sim \frac{e^{-\gamma}}{\log x}
+\]
+where $\gamma$ is Euler's constant.
+\end{theorem}
+
+\begin{theorem}[Mertens' Second Theorem]
+\[
+\sum_{p \le x} \frac{1}{p} = \log \log x + M + O\left(\frac{1}{\log x}\right)
+\]
+where $M \approx 0.261497$ is the Meissel-Mertens constant.
+\end{theorem}
+
+\section{Prime Factorization}
+
+The Fundamental Theorem of Arithmetic states that every integer $n > 1$ has a unique factorization into primes:
+\[
+n = p_1^{e_1} p_2^{e_2} \cdots p_k^{e_k}
+\]
+
+\begin{lstlisting}[caption={Prime factorization}, label=lst:factorization]
+from euler import prime_factors
+
+def factorization_string(n):
+    factors = prime_factors(n)
+    from collections import Counter
+    counts = Counter(factors)
+    parts = []
+    for p, e in sorted(counts.items()):
+        if e == 1:
+            parts.append(str(p))
+        else:
+            parts.append(f"{p}^{e}")
+    return " \times ".join(parts)
+
+for n in [60, 100, 97, 1001, 123456]:
+    print(f"{n} = {factorization_string(n)}")
+\end{lstlisting}
+
+\section{Primality Testing}
+
+\subsection{Trial Division}
+The simplest method: check divisibility by all primes up to $\sqrt{n}$.
+Time complexity: $O(\sqrt{n})$.
+
+\subsection{Miller-Rabin Test}
+A probabilistic test that checks if $n$ is probably prime:
+\begin{enumerate}
+\item Write $n-1 = 2^s \cdot d$ with $d$ odd
+\item Choose random base $a \in [2, n-2]$
+\item Compute $x = a^d \pmod{n}$
+\item If $x = 1$ or $x = n-1$, return "probably prime"
+\item Square $x$ repeatedly $s-1$ times; if $x = n-1$, return "probably prime"
+\item Otherwise return "composite"
+\end{enumerate}
+
+\begin{lstlisting}[caption={Primality testing}, label=lst:primality]
+from euler import is_prime, prime_sieve
+import random
+
+# Miller-Rabin style test
+def miller_rabin_test(n, k=10):
+    if n < 2: return False
+    if n in [2, 3]: return True
+    if n % 2 == 0: return False
+    
+    # Write n-1 = 2^s * d
+    s, d = 0, n - 1
+    while d % 2 == 0:
+        s += 1
+        d //= 2
+    
+    for _ in range(k):
+        a = random.randrange(2, n - 1)
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            continue
+        for _ in range(s - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+print("Testing primality:")
+for n in [97, 101, 1001, 1009, 123456]:
+    print(f"  is_prime({n}) = {is_prime(n)} (miller_rabin: {miller_rabin_test(n)})")
+\end{lstlisting}
+
+\section{Prime Gap Analysis}
+
+A \textbf{prime gap} $g_n$ is the difference between consecutive primes: $g_n = p_{n+1} - p_n$.
+Studying prime gaps reveals deep patterns in prime distribution.
+
+\subsection{Small Prime Gaps}
+
+The first few prime gaps are:
+\[
+g_1 = 1, \; g_2 = 2, \; g_3 = 2, \; g_4 = 4, \; g_5 = 2, \; g_6 = 4, \ldots
+\]
+These correspond to primes $(2,3,5,7,11,13,17,\ldots)$.
+
+\begin{lstlisting}[caption={Prime gap analysis}, label=lst:prime_gaps]
+from euler import prime_sieve
+
+def prime_gaps(limit):
+    primes = prime_sieve(limit)
+    gaps = [primes[i+1] - primes[i] for i in range(len(primes)-1)]
+    return primes, gaps
+
+primes, gaps = prime_gaps(100)
+print(f"First {len(primes)} primes")
+print(f"Corresponding gaps: {gaps[:20]}")
+
+# Find maximal gaps
+max_gap = max(gaps)
+max_idx = gaps.index(max_gap)
+print(f"Largest gap: {max_gap} (between primes {primes[max_idx]} and {primes[max_idx+1]})")
+
+# Gap statistics
+from collections import Counter
+gap_counts = Counter(gaps)
+print(f"Gap frequency (first 20 gaps):")
+for gap, count in sorted(gap_counts.items())[:20]:
+    print(f"  Gap {gap:2d}: {count:3d} occurrences")
+\end{lstlisting}
+
+\subsection{Maximal Prime Gaps}
+
+A \textbf{maximal prime gap} is a gap that is larger than all preceding gaps.
+The sequence of maximal gaps begins: 1, 2, 4, 6, 8, 14, 18, 20, 22, 34, ...
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Gap size} & \textbf{First occurrence} & \textbf{Preceding prime} & \textbf{Index} \\
+\hline
+1 & 2 & 3 & 1 \\
+2 & 3 & 5 & 2 \\
+4 & 7 & 11 & 4 \\
+6 & 23 & 29 & 10 \\
+8 & 523 & 541 & 100 \\
+14 & 524287 & 524311 & 43627 \\
+\hline
+\end{tabular}
+\caption{First occurrences of maximal prime gaps}
+\label{tab:max_gaps}
+\end{table}
+
+\subsection{Conjectures on Prime Gaps}
+
+\begin{theorem}[Cramer's Conjecture, 1936]
+Assuming the Riemann Hypothesis, the prime gaps satisfy:
+\[
+g_n = O(\sqrt{p_n} \log^2 p_n)
+\]
+\end{theorem}
+
+\begin{theorem}[Twin Prime Conjecture]
+There are infinitely many primes $p$ such that $p + 2$ is also prime.
+This remains unproven.
+\end{theorem}
+
+\begin{theorem}[Polignac's Conjecture, 1846]
+For every positive even integer $2k$, there are infinitely many prime pairs
+$(p, p + 2k)$ with both primes.
+\end{theorem}
+
+\subsection{Computational Gap Analysis}
+
+\begin{lstlisting}[caption={Computing maximal gaps}, label=lst:maximal_gaps]
+from euler import prime_sieve
+
+def find_maximal_gaps(limit):
+    primes = prime_sieve(limit)
+    gaps = [primes[i+1] - primes[i] for i in range(len(primes)-1)]
+    
+    max_so_far = 0
+    maximal_gaps = []
+    for i, g in enumerate(gaps):
+        if g > max_so_far:
+            max_so_far = g
+            maximal_gaps.append((primes[i], primes[i+1], g))
+    return maximal_gaps
+
+print("Maximal prime gaps up to 1000:")
+for p1, p2, g in find_maximal_gaps(1000):
+    print(f"  Gap {g} between {p1} and {p2}")
+\end{lstlisting}
+
+\section{Advanced Sieving Methods}
+
+\subsection{Sieve of Atkin}
+
+The Sieve of Atkin is a modern optimized sieve with theoretical complexity
+$O(n / \log \log n)$. It uses quadratic forms to identify primes:
+\[
+12x^2 + 7y^2, \quad 3x^2 + y^2, \quad 3x^2 - y^2 \text{ (for } x > y)
+\]
+
+\begin{lstlisting}[caption={Atkin's sieve}, label=lst:atkens_sieve]
+def atkins_sieve(limit):
+    """Modern sieve using quadratic forms."""
+    sieve = [False] * (limit + 1)
+    
+    # Quadratic forms
+    for x in range(1, int(limit**0.5) + 1):
+        for y in range(1, int(limit**0.5) + 1):
+            n = 12*x**2 + 7*y**2
+            if n <= limit:
+                sieve[n] = not sieve[n]
+            
+            n = 3*x**2 + y**2
+            if n <= limit:
+                sieve[n] = not sieve[n]
+            
+            if x > y:
+                n = 3*x**2 - y**2
+                if n <= limit:
+                    sieve[n] = not sieve[n]
+    
+    # Remove composites
+    for i in range(5, int(limit**0.5) + 1):
+        if sieve[i]:
+            for j in range(i*i, limit + 1, i*i):
+                sieve[j] = False
+    
+    sieve[2] = sieve[3] = True
+    return [i for i in range(2, limit + 1) if sieve[i]]
+
+primes = atkins_sieve(100)
+print(f"Atkin's sieve primes up to 100: {primes}")
+\end{lstlisting}
+
+\subsection{Sieve of Sundaram}
+
+The Sieve of Sundaram (1934) eliminates odd composites by removing numbers
+of the form $i + j + 2ij$ for $1 \le i \le j$.
+
+\subsection{Segmented Sieve}
+
+For very large ranges, a segmented sieve processes one block at a time:
+
+\begin{lstlisting}[caption={Segmented sieve}, label=lst:segmented_sieve]
+from math import isqrt
+
+def segmented_sieve(low, high):
+    """Find primes in range [low, high]."""
+    limit = isqrt(high)
+    small_primes = prime_sieve(limit)
+    
+    # Initialize segment
+    segment_size = high - low + 1
+    is_prime = [True] * segment_size
+    
+    for p in small_primes:
+        # Find first multiple in range
+        start = ((low + p - 1) // p) * p
+        if start < p * p:
+            start = p * p
+        if start < low:
+            start += p
+        
+        for j in range(start - low, segment_size, p):
+            is_prime[j] = False
+    
+    # Special case for 0 and 1
+    if low == 0:
+        is_prime[0] = is_prime[1] = False
+    elif low == 1:
+        is_prime[1] = False
+    
+    return [low + i for i in range(segment_size) if is_prime[i]]
+
+# Example: primes between 100 and 150
+print(f"Primes in [100, 150]: {segmented_sieve(100, 150)}")
+\end{lstlisting}
+
+\section{Computational Number Theory}
+
+\subsection{Wheel Factorization}
+
+Wheel factorization skips multiples of small primes to speed up sieving.
+A ``wheel of circumference 30'' skips multiples of 2, 3, and 5:
+
+\begin{lstlisting}[caption={Wheel factorization}, label=lst:wheel]
+def wheel_factorization_sieve(limit, wheel_primes=None):
+    """Sieve using wheel factorization for efficiency."""
+    if wheel_primes is None:
+        wheel_primes = [2, 3, 5]
+    
+    wheel_size = 1
+    for p in wheel_primes:
+        wheel_size *= p
+    
+    # Generate wheel pattern
+    wheel = []
+    for r in range(wheel_size):
+        if all(r % p != 0 for p in wheel_primes):
+            wheel.append(r)
+    
+    is_prime = [True] * (limit + 1)
+    for p in wheel_primes:
+        for i in range(p, limit + 1, p):
+            is_prime[i] = False
+    
+    # Use wheel for remaining numbers
+    candidate = wheel_primes[-1] + 1
+    while candidate * candidate <= limit:
+        if is_prime[candidate]:
+            for i in range(candidate * candidate, limit + 1, candidate):
+                is_prime[i] = False
+        # Advance using wheel
+        offset = 0
+        while candidate + wheel[offset] <= limit and not is_prime[candidate + wheel[offset]]:
+            offset += 1
+        if candidate + wheel[offset] <= limit:
+            candidate += wheel[offset]
+        else:
+            break
+    
+    return [i for i in range(2, limit + 1) if is_prime[i]]
+
+primes = wheel_factorization_sieve(100)
+print(f"Wheel sieve primes up to 100: {primes}")
+\end{lstlisting}
+
+\subsection{Lucas-Lehmer Test for Mersenne Primes}
+
+Mersenne primes have the form $M_p = 2^p - 1$. The Lucas-Lehmer test determines primality:
+
+\begin{lstlisting}[caption={Lucas-Lehmer test}, label=lst:lucas_lehmer]
+def lucas_lehmer_test(p):
+    """Test if Mersenne number 2^p - 1 is prime."""
+    if p == 2:
+        return True
+    if p % 2 == 0:
+        return False
+    
+    mersenne = (1 << p) - 1
+    s = 4
+    for _ in range(p - 2):
+        s = (s * s - 2) % mersenne
+    
+    return s == 0
+
+# Test known Mersenne primes
+for p in [2, 3, 5, 7, 11, 13, 17, 19, 31]:
+    is_mersenne_prime = lucas_lehmer_test(p)
+    if is_mersenne_prime:
+        print(f"M_{p} = 2^{p} - 1 is prime")
+\end{lstlisting}
+
+\subsection{Elliptic Curve Method for Factorization}
+
+The Elliptic Curve Method (ECM) is one of the most effective factorization
+algorithms for numbers with medium-sized factors.
+
+\begin{lstlisting}[caption={Elliptic curve factorization}, label=lst:ecm_factor]
+import random
+
+def elliptic_curve_factor(n, B1=1000, B2=2000):
+    """Simple ECM factorization using random elliptic curves."""
+    if n % 2 == 0:
+        return 2
+    
+    for _ in range(50):  # Try 50 different curves
+        # Random curve: y^2 = x^3 + ax + b (mod n)
+        a = random.randint(1, n-1)
+        b = random.randint(1, n-1)
+        x = random.randint(2, n-1)
+        
+        # Elliptic curve point doubling and addition
+        def ec_add(P, Q):
+            if P is None:
+                return Q
+            if Q is None:
+                return P
+            if P == Q:
+                # Point doubling
+                num = (3 * P[0]**2 + a) % n
+                den = (2 * P[1]) % n
+            else:
+                # Point addition
+                num = (Q[1] - P[1]) % n
+                den = (Q[0] - P[0]) % n
+            
+            # Compute inverse using extended Euclidean
+            try:
+                inv = pow(den, -1, n)
+            except ValueError:
+                # GCD found - return factor
+                g = math.gcd(den, n)
+                if 1 < g < n:
+                    return g
+                return None
+            
+            lam = (num * inv) % n
+            x3 = (lam**2 - P[0] - Q[0]) % n
+            y3 = (lam * (P[0] - x3) - P[1]) % n
+            return (x3, y3)
+        
+        # Scalar multiplication
+        P = (x, (x**3 + a*x + b) % n)
+        if P[1] == 0:
+            continue
+            
+        for q in range(2, B2 + 1):
+            P = ec_add(P, P)
+            if P is None:
+                break
+            if P == (0, 0):
+                break
+        
+        if P and P != (0, 0):
+            # Check if we found a factor
+            g = math.gcd(P[1], n)
+            if 1 < g < n:
+                return g
+    
+    return n  # Failed to factor
+
+import math
+# Test
+n = 8051
+factor = elliptic_curve_factor(n)
+print(f"Factor of {n}: {factor}")
+\end{lstlisting}
+
+\section{Modern Relevance}
+
+Prime number theory underpins the security of the modern digital world. The RSA cryptosystem, elliptic curve cryptography, and Diffie--Hellman key exchange all depend on properties of prime numbers that Euler discovered centuries ago. The Prime Number Theorem, which Euler's work foreshadowed, is essential for estimating the difficulty of factoring large integers---the basis of internet security. Prime generation algorithms, used to create cryptographic keys, trace their lineage directly to Euler's sieve improvements. Furthermore, the study of prime gaps and distribution drives modern computational number theory and has applications in hash function design and random number generation.
+
+\section{Computational Complexity}
+
+\subsection{Sieve Methods}
+\begin{itemize}
+\item \textbf{Sieve of Eratosthenes}: $O(n \log \log n)$ time, $O(n)$ space
+\item \textbf{Euler's sieve}: Same complexity but each composite removed exactly once
+\item \textbf{Atkin's sieve}: Theoretical $O(n / \log \log n)$, practical variations
+\item \textbf{Segmented sieve}: $O(n)$ space for range sieving, cache-efficient
+\end{itemize}
+
+\subsection{Primality Testing}
+\begin{itemize}
+\item \textbf{Trial division}: $O(\sqrt{n})$ time
+\item \textbf{Miller-Rabin}: $O(k \log^3 n)$ for $k$ iterations (probabilistic)
+\item \textbf{AKS}: $O(\log^{6} n)$ (deterministic, but slower in practice)
+\item \textbf{ECPP}: Elliptic Curve Primality Proving, practical for large numbers
+\end{itemize}
+
+\subsection{Factorization}
+\begin{itemize}
+\item \textbf{Trial division}: $O(\sqrt{n})$ time
+\item \textbf{Pollard's rho}: $O(n^{1/4})$ expected time
+\item \textbf{Quadratic sieve}: Sub-exponential, effective for numbers up to ~100 digits
+\item \textbf{Number field sieve}: Fastest known, $L_n[1/3, \sqrt[3]{64/9}]$
+\end{itemize}
+
+\section{Frequently Asked Questions}
+
+\begin{itemize}
+\item \textbf{Q: How can the sum of reciprocals of primes diverge when the primes get so sparse?} \\
+The divergence is extremely slow. By Mertens' second theorem, $\sum_{p \le x} 1/p \approx \log\log x + M$ (where $M \approx 0.261$ is the Meissel--Mertens constant). Even at $x = 10^{100}$, the sum is only about $3.5$.
+
+\item \textbf{Q: What is the difference between Euler's sieve and the Sieve of Eratosthenes?} \\
+The Sieve of Eratosthenes marks multiples of each prime $p$ starting from $p^2$. Euler's improvement ensures each composite is marked exactly once by dividing out the smallest prime factor before marking further multiples. Both are $O(n \log\log n)$, but Euler's version has fewer redundant operations.
+
+\item \textbf{Q: Why does the Prime Number Theorem involve $\log x$?} \\
+The density of primes near $x$ is approximately $1/\log x$. This comes from the observation that the $n$-th prime $p_n \approx n \log n$, which inverts to $\pi(x) \approx x/\log x$. A rigorous proof (Hadamard and de la Vall\'{e}e Poussin, 1896) uses complex analysis and the zeros of the Riemann zeta function.
+
+\item \textbf{Q: Is the Euler product formula really equivalent to the Fundamental Theorem of Arithmetic?} \\
+Yes. The Euler product $\zeta(s) = \prod_p (1 - p^{-s})^{-1}$ expands into $\sum_n n^{-s}$ precisely because every integer has a unique prime factorization. If factorization were not unique, terms would be duplicated or missing from the sum.
+
+\item \textbf{Q: How accurate is $\pi(x) \approx x/\log x$?} \\
+The relative error tends to zero, but the absolute error can be large. The better approximation $\operatorname{Li}(x) = \int_2^x dt/\log t$ is closer. The Riemann Hypothesis is equivalent to $|\pi(x) - \operatorname{Li}(x)| = O(\sqrt{x} \log x)$.
+
+\item \textbf{Q: Can I use trial division to check if a large number is prime?} \\
+Trial division works for small numbers but is $O(\sqrt{n})$, which is impractical for cryptographic-scale integers. Modern practice uses probabilistic tests like Miller--Rabin, which are fast and can be made deterministic for numbers below known bounds.
+
+\item \textbf{Q: What are twin primes and are there infinitely many?} \\
+Twin primes are pairs $(p, p+2)$ where both are prime (e.g., (3,5), (5,7), (11,13)). The Twin Prime Conjecture states there are infinitely many, but this remains unproven. The best result is Zhang's theorem (2013) showing infinitely many prime pairs with gap at most 70 million, later improved to 246.
+
+\item \textbf{Q: What is the Riemann Hypothesis and how does it relate to primes?} \\
+The Riemann Hypothesis states that all non-trivial zeros of $\zeta(s)$ lie on the line $\Re(s) = 1/2$. This is equivalent to the strongest possible error bound in the Prime Number Theorem: $|\pi(x) - \operatorname{Li}(x)| = O(\sqrt{x} \log x)$. It is one of the seven Millennium Prize Problems.
+
+\item \textbf{Q: How do prime gaps relate to cryptography?} \\
+Prime gaps determine how densely primes are distributed, affecting the probability of finding primes in a random range. For RSA, we need large primes; gap statistics help estimate how many random odd numbers we need to test before finding a prime.
+\end{itemize}
+
+\section{Exercises}
+
+\begin{exercise}
+Implement Euler's improved sieve (each composite removed once) and compare performance with the standard sieve.
+\end{exercise}
+
+\begin{exercise}
+Use the Euler product to show $\prod_{p \le x} (1 - 1/p) \sim e^{-\gamma}/\log x$.
+\end{exercise}
+
+\begin{exercise}
+Prove that the sum of reciprocals of twin primes converges (Brun's theorem, 1919).
+\end{exercise}
+
+\begin{exercise}[Computational]
+Compute $\pi(x)$ for $x = 10^k$ with $k = 1, \ldots, 7$ and compare with $x/\log x$ and $\operatorname{Li}(x)$.
+\end{exercise}
+
+\begin{exercise}
+Show that there are no polynomials $f(n) \in \mathbb{Z}[n]$ that produce only primes (except constant polynomials).
+\end{exercise}
+
+\begin{exercise}
+Prove that the gap between consecutive primes can be arbitrarily large: for any $n$, there exist $n$ consecutive composite numbers.
+\end{exercise}
+
+\begin{exercise}
+Use the Sieve of Eratosthenes to find all primes up to 1000 and verify that $\pi(1000) = 168$.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement the Miller-Rabin primality test and verify it correctly identifies all primes up to 10000. Compare its speed with trial division.
+\end{exercise}
+
+\begin{exercise}
+Show that $\sum_{p \le x} \frac{\log p}{p} \sim \log x$ using the Euler product and properties of $\zeta(s)$.
+\end{exercise}
+
+\begin{exercise}
+Prove that if $p$ is an odd prime, then $2^{(p-1)/2} \equiv \pm 1 \pmod{p}$, where the sign is determined by the Legendre symbol $\left(\frac{2}{p}\right)$.
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement a segmented sieve and use it to find all primes in the range $[10^9, 10^9 + 10^6]$. Measure the execution time.
+\end{exercise}
+
+\begin{exercise}
+Compute the first 1000 prime gaps and analyze their distribution. What is the average gap? The maximum gap?
+\end{exercise}
+
+\begin{exercise}
+Implement the Lucas-Lehmer test and verify it correctly identifies the first 10 Mersenne primes.
+\end{exercise}
+
+\begin{exercise}
+Show that the probability a random integer near $x$ is prime is approximately $1/\log x$. Use this to estimate how many numbers you would need to test to find a 1024-bit prime.
+\end{exercise}
+
+\begin{exercise}
+Prove that between any two consecutive squares $n^2$ and $(n+1)^2$, there is at least one prime for $n \geq 1$. (This is Legendre's conjecture, still open for general $n$.)
+\end{exercise}
+
+\begin{exercise}[Computational]
+Implement Pollard's rho algorithm for factorization and use it to factor several semiprimes. Compare its performance with trial division.
+\end{exercise}
