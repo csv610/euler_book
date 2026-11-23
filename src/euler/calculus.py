@@ -138,7 +138,8 @@ def euler_maclaurin_summation(
     f: Callable[[int], float],
     a: int,
     b: int,
-    k: int = 10
+    k: int = 10,
+    f_derivatives: Optional[List[Callable[[float], float]]] = None,
 ) -> float:
     """
     Euler-Maclaurin summation formula:
@@ -167,9 +168,16 @@ def euler_maclaurin_summation(
         -3617/510,# B_16
     ]
     
-    # Direct sum for small ranges
+    # For small ranges the exact finite sum is the best numerical answer.
     if b - a < 100:
         return sum(f(i) for i in range(a, b + 1))
+
+    # Derivative corrections are mathematically essential.  If the caller has
+    # them, use the full formula; otherwise do not silently return an
+    # uncorrected trapezoidal approximation and label it Euler--Maclaurin.
+    if f_derivatives is None:
+        return sum(f(i) for i in range(a, b + 1))
+    return euler_maclaurin_summation_full(f, f_derivatives, a, b, k)
     
     # Numerical integration using trapezoidal rule
     def integral_approx():
@@ -302,10 +310,12 @@ def bernoulli_numbers(n: int) -> List[float]:
     Compute Bernoulli numbers B_0, B_1, ..., B_n using Akiyama-Tanigawa algorithm.
     """
     A = [0.0] * (n + 1)
-    for m in range(n + 1):
-        A[m] = 1.0 / (m + 1)
-        for j in range(m, 0, -1):
-            A[j-1] = j * (A[j-1] - A[j])
+    A[0] = 1.0
+    for m in range(1, n + 1):
+        A[m] = -sum(
+            factorial(m + 1) / (factorial(j) * factorial(m + 1 - j)) * A[j]
+            for j in range(m)
+        ) / (m + 1)
     return A
 
 

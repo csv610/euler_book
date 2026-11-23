@@ -1,0 +1,113 @@
+% Computational discovery chapter: variation, elliptic integrals, mechanics
+\chapter{Variational Problems, Elliptic Integrals, and Mechanics}
+\label{ch:discovery_variation_mechanics}
+
+\section{The Brachistochrone}
+
+The brachistochrone asks for the curve along which a particle slides from one point
+to another in the least time under gravity. Euler's variational viewpoint replaces
+guesswork about curves by a functional whose stationary curve can be studied.
+
+For a cycloid parameterized by
+
+\[
+x=a(\theta-\sin\theta),\qquad y=a(1-\cos\theta),
+\]
+
+the travel time is $T=\theta\sqrt{a/g}$. The following program finds the parameter
+for a prescribed endpoint.
+
+\begin{lstlisting}[language=Python]
+from euler import brachistochrone_parameter, brachistochrone_time
+
+theta = brachistochrone_parameter(1.0, 1.0)
+print(theta, brachistochrone_time(1.0, 1.0))
+\end{lstlisting}
+
+Students can compare this with a straight ramp and a polygonal approximation to see
+why the fastest curve is not the shortest curve.
+
+\section{Elliptic Integrals}
+
+The arc length of an ellipse leads to an integral that cannot generally be expressed
+using elementary functions. The complete elliptic integrals are
+
+\[
+K(k)=\int_0^{\pi/2}\frac{d\theta}{\sqrt{1-k^2\sin^2\theta}},
+\qquad
+E(k)=\int_0^{\pi/2}\sqrt{1-k^2\sin^2\theta}\,d\theta.
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import elliptic_k, elliptic_e
+from math import pi
+
+print(elliptic_k(0.0), pi/2)
+print(elliptic_e(0.0), pi/2)
+print(elliptic_k(0.5), elliptic_e(0.5))
+\end{lstlisting}
+
+At $k=0$ both integrals reduce to $\pi/2$. This gives an immediate verification of
+the numerical method before exploring the genuinely non-elementary cases.
+
+\section{Euler's Equations for a Rigid Body}
+
+For a torque-free body with principal moments $I_1,I_2,I_3$, Euler's equations are
+
+\[
+\dot L_1=\frac{I_2-I_3}{I_1}L_2L_3,
+\quad
+\dot L_2=\frac{I_3-I_1}{I_2}L_3L_1,
+\quad
+\dot L_3=\frac{I_1-I_2}{I_3}L_1L_2.
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import integrate_euler_top, rigid_body_energy
+
+moments = (1.0, 2.0, 3.0)
+trajectory = integrate_euler_top((1.0, 0.2, 0.1), moments,
+                                 step=0.001, steps=5000)
+energies = [rigid_body_energy(state, moments) for state in trajectory]
+print(max(energies) - min(energies))
+\end{lstlisting}
+
+The nearly constant energy is a verification of the physical structure, not merely
+of numerical closeness. Changing the step size shows the difference between a
+mathematical invariant and numerical drift.
+
+\section{Two-Body Motion}
+
+With units chosen so that the gravitational parameter is $1$, the planar equations
+are
+
+\[
+\ddot x=-\frac{x}{(x^2+y^2)^{3/2}},\qquad
+\ddot y=-\frac{y}{(x^2+y^2)^{3/2}}.
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import integrate_two_body, two_body_energy
+
+orbit = integrate_two_body((1.0, 0.0, 0.0, 1.0),
+                           step=0.001, steps=6283)
+print(two_body_energy(orbit[0]), two_body_energy(orbit[-1]))
+\end{lstlisting}
+
+The initial circular orbit should return near its starting point after approximately
+$2\pi$ time units. Students can vary the initial tangential velocity to produce
+elliptic, escape, and collision trajectories.
+
+\section{Exercises}
+\begin{exercise}
+Compare the cycloid travel time with straight-line motion for the same endpoints.
+\end{exercise}
+\begin{exercise}
+Measure Simpson-rule convergence for $K(0)$ and $E(0)$.
+\end{exercise}
+\begin{exercise}
+Plot the three angular-momentum components of the Euler top and track energy drift.
+\end{exercise}
+\begin{exercise}
+Simulate a non-circular orbit and verify conservation of energy and angular momentum.
+\end{exercise}

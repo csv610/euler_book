@@ -1,0 +1,120 @@
+% Computational discovery chapter: partitions, Bernoulli numbers, and ODEs
+\chapter{Partitions, Power Sums, and Numerical Differential Equations}
+\label{ch:discovery_partitions_calculus}
+
+This chapter follows a recurring Eulerian pattern: calculate small cases, look for
+structure, and only then formulate a theorem. The computer is an experimental
+instrument; the proof remains a mathematical argument.
+
+\section{Integer Partitions}
+
+A partition of $n$ is an unordered sum of positive integers. Let $p(n)$ count
+partitions of $n$. Direct enumeration begins:
+
+\[
+p(0),p(1),\ldots,p(10)=1,1,2,3,5,7,11,15,22,30,42.
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import partition_function_dp
+
+p = partition_function_dp(20)
+print(list(enumerate(p)))
+\end{lstlisting}
+
+The surprising recurrence uses the generalized pentagonal numbers
+$g_k=k(3k-1)/2$:
+
+\begin{theorem}[Euler's pentagonal recurrence]
+\[
+p(n)=\sum_{k\geq1}(-1)^{k-1}\bigl(p(n-g_k)+p(n-g_{-k})\bigr),
+\]
+where $p(0)=1$ and $p(m)=0$ for $m<0$.
+\end{theorem}
+
+The computation suggests the theorem before the proof. Euler's generating-function
+identity is
+
+\[
+\prod_{m=1}^{\infty}(1-x^m)=1+\sum_{k=1}^{\infty}(-1)^k
+\left(x^{k(3k-1)/2}+x^{k(3k+1)/2}\right).
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import euler_partition_theorem
+
+for n in range(1, 16):
+    result = euler_partition_theorem(n)
+    print(n, result['q(n)'], result['p_odd(n)'], result['equal'])
+\end{lstlisting}
+
+This verifies another Euler discovery: partitions into distinct parts and partitions
+into odd parts occur in equal numbers. The natural next question is to find the
+bijection, not merely to observe equality.
+
+\section{Bernoulli Numbers and Power Sums}
+
+The coefficients in Euler--Maclaurin summation also organize sums of powers. The
+Bernoulli numbers are defined by
+
+\[
+\frac{x}{e^x-1}=\sum_{m=0}^{\infty}B_m\frac{x^m}{m!},
+\qquad B_0=1,\quad B_1=-\frac12.
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import bernoulli_numbers, faulhaber_sum
+
+print(bernoulli_numbers(10))
+for k in range(1, 5):
+    print(k, faulhaber_sum(10, k))
+\end{lstlisting}
+
+\begin{theorem}[Faulhaber's formula]
+\[
+\sum_{r=1}^{n}r^k=\frac{1}{k+1}\sum_{j=0}^{k}(-1)^j
+\binom{k+1}{j}B_j n^{k+1-j}.
+\]
+\end{theorem}
+
+The program uses exact rational arithmetic, so the computer can verify identities
+without hiding rounding error. Students should first guess the polynomial for
+$1+2+\cdots+n$, then for squares and cubes, before meeting the general formula.
+
+\section{Euler's Method}
+
+For $y'=f(x,y)$, Euler's method replaces the curve locally by its tangent line:
+
+\[
+y_{r+1}=y_r+h f(x_r,y_r).
+\]
+
+For $y'=y$, $y(0)=1$, the exact answer at $x=1$ is $e$. The following experiment
+reveals first-order convergence, while Heun and RK4 reveal higher orders.
+
+\begin{lstlisting}[language=Python]
+from euler import euler_method, improved_euler_method, runge_kutta_4
+from math import exp
+
+f = lambda x, y: y
+for method in (euler_method, improved_euler_method, runge_kutta_4):
+    errors = []
+    for h in (0.2, 0.1, 0.05):
+        value = method(f, 0.0, 1.0, h, round(1/h))[-1][1]
+        errors.append(abs(value - exp(1)))
+    print(method.__name__, errors, errors[0]/errors[1])
+\end{lstlisting}
+
+The ratios approach $2$, $4$, and $16$, respectively. This is a computational route
+to the ideas of local error, global error, and convergence order.
+
+\section{Exercises}
+\begin{exercise}
+Compute $p(n)$ by enumeration for $n\leq 10$ and compare it with Euler's recurrence.
+\end{exercise}
+\begin{exercise}
+Use exact arithmetic to prove the formulas for the first four power sums.
+\end{exercise}
+\begin{exercise}
+Repeat the ODE experiment for $y'=-2y$ and explain why large step sizes become unstable.
+\end{exercise}

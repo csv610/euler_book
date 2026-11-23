@@ -42,6 +42,7 @@ from .infinite_series import (
     euler_constant,
     euler_constant_partial,
     alternating_harmonic,
+    euler_acceleration_alternating,
     leibniz_pi,
     zeta_function,
     zeta_even,
@@ -176,6 +177,24 @@ from .high_precision import (
     zeta_high_precision,
 )
 
+from .discovery import (
+    bernoulli_numbers,
+    faulhaber_sum,
+    continued_fraction,
+    continued_fraction_convergents,
+    euler_sum_harmonic_over_square,
+    elliptic_k,
+    elliptic_e,
+    brachistochrone_parameter,
+    brachistochrone_time,
+    euler_top_rhs,
+    integrate_euler_top,
+    rigid_body_energy,
+    integrate_two_body,
+    two_body_energy,
+    two_body_angular_momentum,
+)
+
 __all__ = [
     # number_theory
     "euler_totient",
@@ -198,6 +217,7 @@ __all__ = [
     "euler_constant",
     "euler_constant_partial",
     "alternating_harmonic",
+    "euler_acceleration_alternating",
     "leibniz_pi",
     "zeta_function",
     "zeta_even",
@@ -308,4 +328,20 @@ __all__ = [
     "euler_gamma",
     "zeta_high_precision",
     "ScaledInt",
+    # discovery experiments
+    "bernoulli_numbers",
+    "faulhaber_sum",
+    "continued_fraction",
+    "continued_fraction_convergents",
+    "euler_sum_harmonic_over_square",
+    "elliptic_k",
+    "elliptic_e",
+    "brachistochrone_parameter",
+    "brachistochrone_time",
+    "euler_top_rhs",
+    "integrate_euler_top",
+    "rigid_body_energy",
+    "integrate_two_body",
+    "two_body_energy",
+    "two_body_angular_momentum",
 ]

@@ -35,7 +35,9 @@ To work through this chapter, you need:
 \label{fig:primes}
 \end{figure}
 
-Euler improved the Sieve of Eratosthenes by removing each composite number only once.
+The linear sieve, also called Euler's sieve, assigns each composite to its smallest
+prime factor and generates each composite exactly once. The example below uses the
+library's Sieve of Eratosthenes implementation instead.
 
 \begin{lstlisting}[caption={Prime sieves}, label=lst:prime_sieve]
 from euler import prime_sieve, is_prime, prime_factors
@@ -539,14 +541,14 @@ print(f"Factor of {n}: {factor}")
 
 \section{Modern Relevance}
 
-Prime number theory underpins the security of the modern digital world. The RSA cryptosystem, elliptic curve cryptography, and Diffie--Hellman key exchange all depend on properties of prime numbers that Euler discovered centuries ago. The Prime Number Theorem, which Euler's work foreshadowed, is essential for estimating the difficulty of factoring large integers---the basis of internet security. Prime generation algorithms, used to create cryptographic keys, trace their lineage directly to Euler's sieve improvements. Furthermore, the study of prime gaps and distribution drives modern computational number theory and has applications in hash function design and random number generation.
+Prime number theory underpins much of modern cryptography. RSA and Diffie--Hellman use arithmetic modulo large primes, while elliptic-curve systems use groups over finite fields. These applications rely on modern developments in number theory and computing, building on a much longer history that includes Euler's work.
 
 \section{Computational Complexity}
 
 \subsection{Sieve Methods}
 \begin{itemize}
 \item \textbf{Sieve of Eratosthenes}: $O(n \log \log n)$ time, $O(n)$ space
-\item \textbf{Euler's sieve}: Same complexity but each composite removed exactly once
+\item \textbf{Linear (Euler) sieve}: $O(n)$ time and $O(n)$ space; each composite is generated once
 \item \textbf{Atkin's sieve}: Theoretical $O(n / \log \log n)$, practical variations
 \item \textbf{Segmented sieve}: $O(n)$ space for range sieving, cache-efficient
 \end{itemize}
@@ -574,7 +576,7 @@ Prime number theory underpins the security of the modern digital world. The RSA 
 The divergence is extremely slow. By Mertens' second theorem, $\sum_{p \le x} 1/p \approx \log\log x + M$ (where $M \approx 0.261$ is the Meissel--Mertens constant). Even at $x = 10^{100}$, the sum is only about $3.5$.
 
 \item \textbf{Q: What is the difference between Euler's sieve and the Sieve of Eratosthenes?} \\
-The Sieve of Eratosthenes marks multiples of each prime $p$ starting from $p^2$. Euler's improvement ensures each composite is marked exactly once by dividing out the smallest prime factor before marking further multiples. Both are $O(n \log\log n)$, but Euler's version has fewer redundant operations.
+The Sieve of Eratosthenes marks multiples of each prime $p$ starting from $p^2$ and runs in $O(n\log\log n)$ time. The linear sieve generates each composite once using its smallest prime factor and runs in $O(n)$ time, with $O(n)$ space.
 
 \item \textbf{Q: Why does the Prime Number Theorem involve $\log x$?} \\
 The density of primes near $x$ is approximately $1/\log x$. This comes from the observation that the $n$-th prime $p_n \approx n \log n$, which inverts to $\pi(x) \approx x/\log x$. A rigorous proof (Hadamard and de la Vall\'{e}e Poussin, 1896) uses complex analysis and the zeros of the Riemann zeta function.
@@ -601,7 +603,7 @@ Prime gaps determine how densely primes are distributed, affecting the probabili
 \section{Exercises}
 
 \begin{exercise}
-Implement Euler's improved sieve (each composite removed once) and compare performance with the standard sieve.
+Implement a linear sieve that generates each composite once and compare it with the standard Sieve of Eratosthenes.
 \end{exercise}
 
 \begin{exercise}

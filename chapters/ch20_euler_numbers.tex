@@ -4,10 +4,10 @@
 \chapter{Euler Numbers and Tangent/Secant Expansions}
 
 \begin{historical}
-Euler discovered in 1755 that the Taylor series of $\tan(x)$ and $\sec(x)$ have
-integer coefficients that count alternating permutations. These numbers, now called
-Euler zigzag numbers or Andre permutations, appear throughout combinatorics, analysis,
-and the theory of continued fractions.
+Euler studied the integer coefficients in the Taylor series of $\tan(x)$ and
+$\sec(x)$. André later established their connection to alternating permutations.
+These Euler zigzag numbers appear throughout combinatorics, analysis, and the
+theory of continued fractions.
 
 Euler's generating function identity:
 \[
@@ -54,9 +54,10 @@ A_{10} &= 50521
 
 The zigzag numbers satisfy the recurrence:
 \[
-2A_{n+1} = \sum_{k=0}^{n} \binom{n}{k} A_k A_{n-k}
+2A_{n+1} = \sum_{k=0}^{n} \binom{n}{k} A_k A_{n-k},\qquad n\geq 1.
 \]
-This can be proven using the generating function and the fact that $(\tan x + \sec x)' = \sec x (\tan x + \sec x)$.
+This follows from the exponential generating function and
+$(\tan x+\sec x)'=((\tan x+\sec x)^2+1)/2$.
 
 \begin{lstlisting}[caption={Computing Euler zigzag numbers}, label=lst:euler_zigzag]
 from euler import euler_number_zigzag, euler_secant_numbers
@@ -81,7 +82,7 @@ Separating even and odd powers gives:
 \sec x = \sum_{n=0}^{\infty} A_{2n} \frac{x^{2n}}{(2n)!} = 1 + \frac{x^2}{2} + \frac{5x^4}{24} + \frac{61x^6}{720} + \cdots
 \]
 \[
-\tan x = \sum_{n=0}^{\infty} A_{2n+1} \frac{x^{2n+1}}{(2n+1)!} = x + \frac{x^3}{6} + \frac{x^5}{20} + \frac{61x^7}{5040} + \cdots
+\tan x = \sum_{n=0}^{\infty} A_{2n+1} \frac{x^{2n+1}}{(2n+1)!} = x + \frac{x^3}{3} + \frac{2x^5}{15} + \frac{17x^7}{315} + \cdots
 \]
 
 \subsection{Connection to Bernoulli Numbers}
@@ -246,14 +247,21 @@ Johann Heinrich Lambert (1768) proved that $\tan r$ is irrational for rational $
 using continued fractions. This immediately implies $\pi$ is irrational since $\tan(\pi/4) = 1$.
 
 \begin{lstlisting}[caption={Continued fraction for tan(x)}, label=lst:tan_cf]
-from euler import continued_fraction_tan
+from fractions import Fraction
+from math import tan
 
-# Compute convergents of tan(1)
-convergents = continued_fraction_tan(1, 10)
+# Truncate tan(x) = x / (1 - x^2/(3 - x^2/(5 - ...))).
+def tangent_convergent(x, terms):
+    denominator = Fraction(2 * terms - 1)
+    for odd in range(2 * terms - 3, 0, -2):
+        denominator = Fraction(odd) - Fraction(x * x, 1) / denominator
+    return Fraction(x, 1) / denominator
+
 print("Convergents of tan(1):")
-for i, (p, q) in enumerate(convergents):
-    print(f"  [{i}] = {p}/{q} = {p/q:.10f}")
-print(f"Actual tan(1) = {math.tan(1):.10f}")
+for terms in range(1, 11):
+    value = tangent_convergent(1, terms)
+    print(f"  [{terms}] = {value} = {float(value):.10f}")
+print(f"Actual tan(1) = {tan(1):.10f}")
 \end{lstlisting}
 
 \section{The Andr\'{e} Permutations Connection}
@@ -465,7 +473,7 @@ Prove that the continued fraction coefficients of $\tan x$ are related to Euler 
 \end{exercise}
 
 \begin{exercise}
-Show that $\sec x + \tan x = \tan\left(\frac{\pi}{4} + \frac{x}{2}\right) \sec x$. Use this to derive alternative series expansions.
+Show that $\sec x + \tan x = \tan\left(\frac{\pi}{4} + \frac{x}{2}\right)$. Use this to derive alternative series expansions.
 \end{exercise}
 
 \begin{exercise}

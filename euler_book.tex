@@ -24,6 +24,8 @@
 \usepackage{makeidx}
 \usepackage{doi}
 \usepackage{bookmark}
+\usepackage{listings}
+\usepackage{tikz}
 
 \geometry{
     paper=a4paper,
@@ -66,6 +68,16 @@
 \newtheorem{historical}[theorem]{Historical Note}
 \newtheorem{application}[theorem]{Application}
 \newtheorem{remark}[theorem]{Remark}
+\newtheorem{exercise}[theorem]{Exercise}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+}
 
 \titleformat{\chapter}[display]
     {\normalfont\huge\bfseries\color{eulerblue}}
@@ -258,9 +270,12 @@ x^n - 1 = \prod_{d|n} \Phi_d(x).
 \]
 \end{theorem}
 
-This implies the probability that two random integers are coprime is
+The number of ordered coprime pairs $(a,b)$ with $1\le a,b\le n$ is
+$2\sum_{k=1}^n\varphi(k)-1$. Therefore the probability that two uniformly
+chosen integers from $\{1,\dots,n\}$ are coprime is
 \[
-\lim_{n \to \infty} \frac{1}{n^2} \sum_{k=1}^n \varphi(k) = \frac{6}{\pi^2} = \frac{1}{\zeta(2)}.
+\lim_{n \to \infty} \frac{2\sum_{k=1}^n\varphi(k)-1}{n^2}
+= \frac{6}{\pi^2} = \frac{1}{\zeta(2)}.
 \]
 
 \cleardoublepage
@@ -326,13 +341,16 @@ The Euler product connects the zeros of $\zeta(s)$ to the distribution of primes
 Riemann's 1859 paper extended $\zeta(s)$ to the complex plane and showed that the non-trivial zeros control the error term in the Prime Number Theorem.
 \end{application}
 
-\begin{application}[Euler's Sieve]
-Euler improved the Sieve of Eratosthenes by removing each composite exactly once:
+\begin{application}[Sieve of Eratosthenes]
+The Sieve of Eratosthenes marks composite numbers, beginning at $p^2$ for each
+prime $p$. The following is a schematic version of that sieve:
 \begin{verbatim}
 For p in primes up to sqrt(n):
     For multiples of p starting at p^2:
-        if not already removed: remove
+        mark as composite
 \end{verbatim}
+Euler's linear sieve is a distinct algorithm that assigns each composite to its
+smallest prime factor and therefore processes each composite once.
 \end{application}
 
 \cleardoublepage
@@ -375,13 +393,15 @@ Two positive integers $a \neq b$ form an \emph{amicable pair} if
 \]
 \end{definition}
 
-\begin{theorem}[Euler's Amicable Pair Formula]
-If $p = 2^k - 1$ and $q = 2^k p - 1$ are prime, and $r = 2^{2k-1} - 1$ is prime, then
+\begin{theorem}[Thabit ibn Qurra's Amicable Pair Rule]
+For an integer $k>1$, let $p = 3\cdot 2^{k-1}-1$, $q = 3\cdot 2^k-1$,
+and $r = 9\cdot 2^{2k-1}-1$. If all three are prime, then
 \[
 m = 2^k p q, \qquad n = 2^k r
 \]
 form an amicable pair.
 \end{theorem}
+For example, $k=2$ gives $(m,n)=(220,284)$.
 
 Euler found 58 pairs, including:
 $(220, 284)$, $(1184, 1210)$, $(2620, 2924)$, $(5020, 5564)$, $(6232, 6368)$.
@@ -428,8 +448,10 @@ If $\gcd(m,n)=1$, then $\sigma_k(mn) = \sigma_k(m)\sigma_k(n)$.
 \begin{theorem}[Product Formula]
 If $n = \prod_{i=1}^r p_i^{e_i}$, then
 \[
-\sigma_k(n) = \prod_{i=1}^r \frac{p_i^{k(e_i+1)} - 1}{p_i^k - 1}.
+\sigma_k(n) = \prod_{i=1}^r \left(\sum_{j=0}^{e_i}p_i^{kj}\right).
 \]
+For $k\ne 0$, each factor is the geometric sum
+$\bigl(p_i^{k(e_i+1)}-1\bigr)/(p_i^k-1)$; for $k=0$ it equals $e_i+1$.
 \end{theorem}
 
 Special cases:
@@ -576,11 +598,11 @@ H_n = \log n + \gamma + \frac{1}{2n} - \frac{1}{12n^2} + \frac{1}{120n^4} - \fra
 
 \section{Series Representations}
 
-\begin{theorem}[Euler's Series for $\gamma$]
+\begin{theorem}[A Series for $\gamma$]
 \[
-\gamma = \sum_{k=1}^\infty \frac{\zeta(2k+1) - 1}{2k+1} = \sum_{k=1}^\infty \frac{G_k}{k}
+\gamma = \sum_{n=1}^\infty \left(\frac{1}{n} - \log\left(1+\frac{1}{n}\right)\right).
 \]
-where $G_k$ are the Gregory coefficients ($G_1 = 1/2, G_2 = -1/12, G_3 = 1/24, \dots$).
+Each summand is positive and is $O(n^{-2})$, so the series converges.
 \end{theorem}
 
 \section{Applications}
@@ -666,7 +688,10 @@ The sinc function $\sin(\pi x)/(\pi x)$ is the ideal low-pass filter. Its zeros 
 \end{application}
 
 \begin{application}[Probability]
-The characteristic function of the uniform distribution on $[-1,1]$ is $\sin t / t$. The infinite product gives an alternative proof of the central limit theorem.
+The characteristic function of the uniform distribution on $[-1,1]$ is
+$\sin t / t$, with its value at $t=0$ defined by continuity. The sine product
+therefore gives an infinite-product representation of this characteristic
+function.
 \end{application}
 
 \cleardoublepage
@@ -713,11 +738,12 @@ Used to derive Stirling's formula for $\log n!$ and asymptotics of $\zeta(s)$.
 
 \section{Euler's Constant via Series Acceleration}
 
-Using the Gregory coefficients $G_k$:
+The convergent logarithmic series for Euler's constant is
 \[
-\gamma = \sum_{k=1}^\infty \frac{G_k}{k} = \frac{1}{2} - \frac{1}{24} + \frac{1}{72} - \frac{19}{2880} + \cdots
+\gamma = \sum_{n=1}^\infty \left(\frac{1}{n} - \log\left(1+\frac{1}{n}\right)\right).
 \]
-This converges much faster than $H_n - \log n$.
+Its terms are $O(n^{-2})$, compared with the $O(n^{-1})$ error in the
+approximation $H_n-\log n$.
 
 \cleardoublepage
 
@@ -1069,15 +1095,17 @@ r = \frac{\alpha \Delta t}{\Delta x^2} \le \frac{1}{2}.
 \label{ch:euler_numbers}
 
 \section{Secant and Tangent Numbers}
-Euler numbers $E_n$ are the coefficients of the Taylor expansion of the secant function:
+Use the signed Euler-number convention $E_0=1$, $E_2=-1$, $E_4=5$, $\dots$.
+Then the secant expansion is:
 \[
 \sec x = \sum_{n=0}^\infty \frac{(-1)^n E_{2n}}{(2n)!} x^{2n}.
 \]
-The tangent numbers (or Euler-Bernoulli numbers) are coefficients of the tangent function:
+The positive tangent numbers $T_{2n-1}$ are coefficients of the tangent function:
 \[
-\tan x = \sum_{n=1}^\infty \frac{(-1)^{n-1} T_{2n-1}}{(2n-1)!} x^{2n-1}.
+\tan x = \sum_{n=1}^\infty \frac{T_{2n-1}}{(2n-1)!} x^{2n-1}.
 \]
-Both sets of numbers enumerate alternating (or zigzag) permutations of a set of size $n$.
+The secant numbers count alternating permutations of even size, and the tangent
+numbers count those of odd size.
 
 \cleardoublepage
 
@@ -1093,6 +1121,20 @@ Euler computed $\pi$ to 20 decimal places and developed continued fraction expan
 e - 1 = [1; 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, \dots].
 \]
 Modern high-precision algorithms utilize the Gauss-Legendre AGM (Arithmetic-Geometric Mean) scheme to double the digits of precision at each iteration.
+
+\cleardoublepage
+
+%==============================================================================
+% PART VII: COMPUTATIONAL DISCOVERY
+%==============================================================================
+\part{Computational Discovery in Euler's Mathematics}
+\label{part:computational_discovery}
+
+\input{chapters/ch22_partitions_calculus}
+\cleardoublepage
+\input{chapters/ch23_continued_fractions_sums}
+\cleardoublepage
+\input{chapters/ch24_variation_elliptic_mechanics}
 
 \begin{thebibliography}{14}
 \bibitem{andrews}

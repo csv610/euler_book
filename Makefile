@@ -1,5 +1,4 @@
-# Makefile for Euler Student Guide
-# Build LaTeX document and run Python tests
+# Build Euler's Mathematics documents and run Python tests
 
 SHELL := /bin/bash
 
@@ -13,7 +12,7 @@ TEST_DIR := tests
 LATEX := pdflatex
 LATEX_OPTS := -interaction=nonstopmode -halt-on-error
 BIBTEX := bibtex
-MAIN_TEX := Euler_Student_Guide.tex
+MAIN_TEX ?= euler_book.tex
 OUTPUT_PDF := $(MAIN_TEX:.tex=.pdf)
 
 # Directories
@@ -21,7 +20,7 @@ BUILD_DIR := build
 CHAPTERS_DIR := chapters
 FIGURES_DIR := figures
 
-.PHONY: all test clean pdf view help install
+.PHONY: all test clean pdf pdf-quick student-guide-pdf view help install
 
 # Default target
 all: pdf test
@@ -44,6 +43,9 @@ test-module:
 
 # Build LaTeX document
 pdf: $(OUTPUT_PDF)
+
+student-guide-pdf:
+	$(MAKE) pdf MAIN_TEX=euler_student_guide.tex
 
 $(OUTPUT_PDF): $(MAIN_TEX) $(wildcard $(CHAPTERS_DIR)/*.tex) $(wildcard $(FIGURES_DIR)/*)
 	@mkdir -p $(BUILD_DIR)
@@ -82,7 +84,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f *.aux *.log *.out *.toc *.lof *.lot *.fls *.fdb_latexmk
 	rm -f *.synctex.gz *.nav *.snm *.vrb
-	rm -f $(OUTPUT_PDF)
+	rm -f euler_book.pdf euler_student_guide.pdf
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete
 	rm -rf .pytest_cache .mypy_cache .coverage
@@ -110,11 +112,12 @@ figures:
 
 # Help
 help:
-	@echo "Euler Student Guide - Build System"
+	@echo "Euler Mathematics - Build System"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all          - Build PDF and run tests (default)"
 	@echo "  pdf          - Build LaTeX document (3 passes)"
+	@echo "  student-guide-pdf - Build the student guide (3 passes)"
 	@echo "  pdf-quick    - Quick LaTeX build (1 pass)"
 	@echo "  test         - Run all Python tests"
 	@echo "  test-cov     - Run tests with coverage"

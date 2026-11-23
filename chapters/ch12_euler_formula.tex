@@ -183,13 +183,12 @@ e^z = \cosh z + \sinh z, \quad e^{-z} = \cosh z - \sinh z
 \end{theorem}
 
 \begin{lstlisting}[caption={Hyperbolic identities}, label=lst:hyperbolic]
-from euler import hyperbolic_cos, hyperbolic_sin
 import math, cmath
 
 # Verify: cos(ix) = cosh(x)
 for x in [0.5, 1.0, 2.0]:
     cos_ix = cmath.cos(1j * x)
-    cosh_x = hyperbolic_cos(x)
+    cosh_x = math.cosh(x)
     print(f"cos(i{x:.1f}) = {cos_ix.real:.6f} + {cos_ix.imag:.6f}i  (cosh({x:.1f}) = {cosh_x:.6f})")
 \end{lstlisting}
 

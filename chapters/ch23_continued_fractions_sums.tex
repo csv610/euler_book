@@ -1,0 +1,73 @@
+% Computational discovery chapter: continued fractions and Euler sums
+\chapter{Continued Fractions and Euler Sums}
+\label{ch:discovery_continued_fractions}
+
+\section{Rational Approximation}
+
+Repeatedly taking the integer part of a number and then inverting the remainder
+produces a continued fraction. For the rational approximation $355/113$ to $\pi$:
+
+\begin{lstlisting}[language=Python]
+from fractions import Fraction
+from euler import continued_fraction, continued_fraction_convergents
+
+a = continued_fraction(Fraction(355, 113))
+print(a)
+print(continued_fraction_convergents(a))
+\end{lstlisting}
+
+The convergents $3$, $22/7$, and $355/113$ appear naturally. This is an example of
+computation revealing that good approximations are not accidental.
+
+Euler's continued fraction for $e$ has the pattern
+
+\[
+e=[2;1,2,1,1,4,1,1,6,1,1,8,\ldots].
+\]
+
+\begin{lstlisting}[language=Python]
+from fractions import Fraction
+from euler import continued_fraction_convergents
+
+coefficients = [2, 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8]
+for convergent in continued_fraction_convergents(coefficients):
+    print(convergent, float(convergent))
+\end{lstlisting}
+
+\section{Euler Sums}
+
+The harmonic numbers $H_n$ occur throughout Euler's work. A computer can suggest
+the non-obvious identity
+
+\[
+\sum_{n=1}^{\infty}\frac{H_n}{n^2}=2\zeta(3).
+\]
+
+\begin{lstlisting}[language=Python]
+from euler import euler_sum_harmonic_over_square
+
+for n in (100, 1000, 10000):
+    value = euler_sum_harmonic_over_square(n)
+    print(n, value, value - 2.4041138063191885)
+\end{lstlisting}
+
+The experiment is evidence, not proof. A proof can reorganize the double sum:
+
+\[
+\sum_{n\geq1}\frac{H_n}{n^2}
+=\sum_{n\geq1}\sum_{k=1}^{n}\frac{1}{k n^2},
+\]
+
+then use symmetry and telescoping identities. This is precisely the kind of
+rearrangement through which Euler turned numerical patterns into analysis.
+
+\section{Exercises}
+\begin{exercise}
+Find the first ten convergents of $\sqrt2=[1;2,2,2,\ldots]$ and plot their errors.
+\end{exercise}
+\begin{exercise}
+Compare the approximation to $\pi$ from $22/7$ and $355/113$ with decimal truncation.
+\end{exercise}
+\begin{exercise}
+Estimate the tail of the Euler sum and explain why direct summation is slow.
+\end{exercise}

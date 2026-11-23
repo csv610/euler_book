@@ -131,14 +131,14 @@ def euler_acceleration_alternating(series_fn, n: int) -> float:
     # Compute first n+1 terms
     a = [series_fn(k) for k in range(n + 1)]
     
-    # Compute forward differences
+    # Build successive forward-difference rows. The first item in each row is
+    # Δ^k a_0, which is the coefficient required by Euler's transformation.
     result = 0.0
+    differences = a
     for k in range(n + 1):
-        # Δ^k a_0
-        diff = a[0]
-        for _ in range(k):
-            diff = a[_ + 1] - a[_]
-        result += ((-1) ** k) * diff / (2 ** (k + 1))
+        result += ((-1) ** k) * differences[0] / (2 ** (k + 1))
+        differences = [differences[i + 1] - differences[i]
+                       for i in range(len(differences) - 1)]
     return result
 
 

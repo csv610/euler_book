@@ -41,6 +41,9 @@ This project contains:
 make pdf
 ```
 
+This builds `euler_book.pdf`. To build the companion guide, run
+`make student-guide-pdf`.
+
 ### Run Tests
 
 ```bash
@@ -59,8 +62,8 @@ pip install -e .
 
 ```
 Euler/
-├── Euler_Book.tex                    # Main reference book
-├── Euler_Student_Guide.tex           # Student guide with exercises
+├── euler_book.tex                    # Main reference book
+├── euler_student_guide.tex           # Student guide with exercises
 ├── Makefile                          # Build automation
 ├── pyproject.toml                    # Python package config
 ├── .gitignore                        # Excludes build artifacts

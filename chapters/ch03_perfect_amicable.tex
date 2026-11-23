@@ -137,8 +137,9 @@ The proper divisors of 220 are: $1, 2, 4, 5, 10, 11, 20, 22, 44, 55, 110$. Their
 The proper divisors of 284 are: $1, 2, 4, 71, 142$. Their sum is $1+2+4+71+142 = 220$.
 \end{proof}
 
-\begin{theorem}[Euler's Amicable Pair Formula]
-If $p = 2^k - 1$ and $q = 2^k p - 1$ are prime, and $r = 2^{2k-1} - 1$ is prime, then
+\begin{theorem}[Thabit ibn Qurra's Amicable Pair Rule]
+For an integer $k>1$, let $p=3\cdot2^{k-1}-1$, $q=3\cdot2^k-1$,
+and $r=9\cdot2^{2k-1}-1$. If all three are prime, then
 \[
 m = 2^k p q, \qquad n = 2^k r
 \]
@@ -146,28 +147,18 @@ form an amicable pair.
 \end{theorem}
 
 \begin{proof}
-We verify $\sigma(m) = m + n$ and $\sigma(n) = m + n$.
-
-Since $p, q, r$ are distinct odd primes:
+Because $p,q,r$ are distinct primes and $p+1=3\cdot2^{k-1}$,
+$q+1=3\cdot2^k$, multiplicativity gives
 \[
-\sigma(m) = \sigma(2^k) \cdot \sigma(p) \cdot \sigma(q) = (2^{k+1}-1)(p+1)(q+1).
+\sigma(m)=(2^{k+1}-1)(p+1)(q+1)
+=(2^{k+1}-1)(r+1)=\sigma(n).
 \]
-\[
-\sigma(n) = \sigma(2^k) \cdot \sigma(r) = (2^{k+1}-1)(r+1).
-\]
-
-Since $p = 2^k - 1$, we have $p + 1 = 2^k$. Since $q = 2^k(2^k-1) - 1 = 2^k p - 1$, we have $q + 1 = 2^k p$. Also $r = 2^{2k-1} - 1$, so $r + 1 = 2^{2k-1}$.
-
-Therefore:
-\[
-\sigma(n) = (2^{k+1}-1) \cdot 2^{2k-1} = 2^{2k-1}(2^{k+1}-1) = n + m.
-\]
-
-And:
-\[
-\sigma(m) = (2^{k+1}-1) \cdot 2^k \cdot 2^k p = 2^{2k} p (2^{k+1}-1) = m + n.
-\]
+Substituting the definitions of $p,q,r$ also gives
+$(2^{k+1}-1)(r+1)=2^k(pq+r)=m+n$. Hence both divisor sums equal $m+n$.
 \end{proof}
+
+For $k=2$, the primes are $p=5$, $q=11$, and $r=71$, giving the pair
+$(220,284)$.
 
 \begin{historical}
 Euler's 1747 paper discovered numerous amicable pairs using systematic computation. He found pairs such as $(1184, 1210)$, $(2620, 2924)$, and many more, dramatically expanding the known list from just three pairs.
